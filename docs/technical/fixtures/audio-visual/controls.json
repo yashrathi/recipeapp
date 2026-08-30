@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "controls": [
+    { "id": "activate_audio", "views": ["audio_gate"], "labelId": "activate_audio", "accessibleNameId": "activate_audio", "activationMessageId": "control.activate_audio", "core": true, "consequence": "preference" },
+    { "id": "continue", "views": ["language"], "labelId": "continue", "accessibleNameId": "continue", "activationMessageId": "control.continue", "core": true, "consequence": "safe" },
+    { "id": "start", "views": ["today"], "labelId": "start", "accessibleNameId": "start", "activationMessageId": "control.start", "core": true, "consequence": "safe" },
+    { "id": "start_cooking", "views": ["ingredient"], "labelId": "start_cooking", "accessibleNameId": "start_cooking", "activationMessageId": "control.start_cooking", "core": true, "consequence": "progress" },
+    { "id": "resume", "views": ["today"], "labelId": "resume", "accessibleNameId": "resume", "activationMessageId": "control.resume", "core": true, "consequence": "safe" },
+    { "id": "check_ingredients", "views": ["briefing"], "labelId": "check_ingredients", "accessibleNameId": "check_ingredients", "activationMessageId": "control.check_ingredients", "core": true, "consequence": "safe" },
+    { "id": "have_it", "views": ["ingredient"], "labelId": "have_it", "accessibleNameId": "have_it", "activationMessageId": "control.have_it", "core": true, "consequence": "safe" },
+    { "id": "missing", "views": ["ingredient"], "labelId": "missing", "accessibleNameId": "missing", "activationMessageId": "control.missing", "core": true, "consequence": "issue" },
+    { "id": "repeat", "views": ["today", "briefing", "ingredient", "cook", "completion"], "labelId": "repeat", "accessibleNameId": "repeat", "activationMessageId": "control.repeat", "core": true, "consequence": "none" },
+    { "id": "stop", "views": ["language", "today", "briefing", "ingredient", "cook", "help", "media", "completion", "audio_error"], "labelId": "stop", "accessibleNameId": "stop", "activationMessageId": "control.stop", "core": true, "consequence": "none" },
+    { "id": "next", "views": ["cook"], "labelId": "next", "accessibleNameId": "next", "activationMessageId": "control.next", "core": true, "consequence": "progress" },
+    { "id": "help", "views": ["today", "briefing", "ingredient", "cook", "completion"], "labelId": "help", "accessibleNameId": "help", "activationMessageId": "control.help", "core": true, "consequence": "safe" },
+    { "id": "change_language", "views": ["today", "briefing", "ingredient", "cook", "completion"], "labelId": "change_language", "accessibleNameId": "change_language", "activationMessageId": "control.change_language", "core": true, "consequence": "preference" },
+    { "id": "show_how", "views": ["cook"], "labelId": "show_how", "accessibleNameId": "show_how", "activationMessageId": "control.show_how", "core": false, "consequence": "safe" },
+    { "id": "play", "views": ["media"], "labelId": "play", "accessibleNameId": "play", "activationMessageId": "control.play", "core": false, "consequence": "media" },
+    { "id": "pause", "views": ["media"], "labelId": "pause", "accessibleNameId": "pause", "activationMessageId": "control.pause", "core": false, "consequence": "media" },
+    { "id": "replay", "views": ["media"], "labelId": "replay", "accessibleNameId": "replay", "activationMessageId": "control.replay", "core": false, "consequence": "media" },
+    { "id": "back", "views": ["language", "help", "media"], "labelId": "back", "accessibleNameId": "back", "activationMessageId": "control.back", "core": true, "consequence": "safe" },
+    { "id": "done", "views": ["completion"], "labelId": "done", "accessibleNameId": "done", "activationMessageId": "control.done", "core": true, "consequence": "completion" },
+    { "id": "retry_audio", "views": ["audio_error"], "labelId": "retry_audio", "accessibleNameId": "retry_audio", "activationMessageId": "control.retry_audio", "core": true, "consequence": "safe" },
+    { "id": "tell_homeowner", "views": ["help", "audio_error"], "labelId": "tell_homeowner", "accessibleNameId": "tell_homeowner", "activationMessageId": "control.tell_homeowner", "core": true, "consequence": "issue" },
+    { "id": "start_timer", "views": ["cook"], "labelId": "start_timer", "accessibleNameId": "start_timer", "activationMessageId": "control.start_timer", "core": true, "consequence": "timer" },
+    { "id": "ingredient_missing", "views": ["help"], "labelId": "ingredient_missing", "accessibleNameId": "ingredient_missing", "activationMessageId": "control.ingredient_missing", "core": true, "consequence": "issue" },
+    { "id": "instruction_unclear", "views": ["help"], "labelId": "instruction_unclear", "accessibleNameId": "instruction_unclear", "activationMessageId": "control.instruction_unclear", "core": true, "consequence": "issue" },
+    { "id": "cannot_complete", "views": ["help"], "labelId": "cannot_complete", "accessibleNameId": "cannot_complete", "activationMessageId": "control.cannot_complete", "core": true, "consequence": "issue" }
+  ],
+  "dynamicControls": [
+    {
+      "id": "select_language",
+      "view": "language",
+      "visibleLabelSource": "targetLocale.languageName",
+      "accessibleNameSource": "targetLocale.languageName",
+      "activationSequence": ["language.name", "language.selected_continue"],
+      "speechLocale": "targetLocale"
+    },
+    {
+      "id": "focal_visual",
+      "views": ["ingredient", "cook"],
+      "visibleLabelSource": "none",
+      "accessibleNameSource": "visual.spokenDescriptionMessageId",
+      "activationSequence": ["visual.spokenDescriptionMessageId"],
+      "speechLocale": "currentLocale"
+    }
+  ]
+}

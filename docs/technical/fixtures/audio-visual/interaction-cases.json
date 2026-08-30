@@ -1,0 +1,456 @@
+{
+  "schemaVersion": 1,
+  "fixtureAssignmentId": "assignment-paneer-001",
+  "fixtureRecipeVersionId": "recipe-paneer-v1",
+  "tokenFields": ["assignmentId", "recipeVersionId", "locale", "screenInstanceId", "generation"],
+  "cases": [
+    {
+      "id": "first_tap_unlocks_audio",
+      "given": { "view": "audio_gate", "audioGate": "locked", "locale": "en-IN", "screenInstanceId": 1, "generation": 0 },
+      "event": { "type": "ACTIVATE_AUDIO" },
+      "expected": {
+        "view": "language",
+        "audioGate": "unlocked",
+        "screenInstanceId": 2,
+        "generation": 1,
+        "cancelPreviousSpeech": true,
+        "speechByLocale": {
+          "en-IN": ["Turn on sound.", "Sound is on. Choose your language. Tap a button to hear it."],
+          "hi-IN": ["आवाज़ चालू करें।", "आवाज़ चालू है। अपनी भाषा चुनें। भाषा सुनने के लिए बटन दबाएँ।"]
+        }
+      }
+    },
+    {
+      "id": "first_tap_without_speech_source_fails_visibly",
+      "given": { "view": "audio_gate", "audioGate": "locked", "locale": "hi-IN", "screenInstanceId": 1, "generation": 0, "cachedAudioAvailable": false, "compatibleDeviceVoice": false },
+      "event": { "type": "ACTIVATE_AUDIO" },
+      "expected": {
+        "view": "audio_error",
+        "returnView": "language",
+        "audioGate": "unlocked",
+        "screenInstanceId": 2,
+        "generation": 1,
+        "speech": [],
+        "visualState": "large_sound_error",
+        "hapticPattern": "error_if_supported",
+        "controls": ["retry_audio", "tell_homeowner"]
+      }
+    },
+    {
+      "id": "select_language_uses_target_language",
+      "given": { "view": "language", "audioGate": "unlocked", "locale": "en-IN", "screenInstanceId": 2, "generation": 1 },
+      "event": { "type": "SELECT_LANGUAGE", "locale": "hi-IN" },
+      "expected": {
+        "view": "language",
+        "locale": "hi-IN",
+        "screenInstanceId": 2,
+        "generation": 2,
+        "cancelPreviousSpeech": true,
+        "persist": ["user.spokenLocale"],
+        "speech": [
+          { "locale": "hi-IN", "text": "हिन्दी।" },
+          { "locale": "hi-IN", "text": "हिन्दी चुनी गई है। आगे बढ़ें बटन दबाएँ।" }
+        ]
+      }
+    },
+    {
+      "id": "continue_enters_today",
+      "given": { "view": "language", "audioGate": "unlocked", "locale": "en-IN", "screenInstanceId": 2, "generation": 2, "taskExists": true },
+      "event": { "type": "CONTINUE" },
+      "expected": {
+        "view": "today",
+        "screenInstanceId": 3,
+        "generation": 3,
+        "cancelPreviousSpeech": true,
+        "currentPromptMessageId": "today.task",
+        "speechByLocale": {
+          "en-IN": ["Continue.", "Today. Next, make paneer and spinach for lunch. Press Start."],
+          "hi-IN": ["आगे बढ़ें।", "आज। अगला काम दोपहर के खाने के लिए पालक पनीर बनाना है। शुरू करें बटन दबाएँ।"]
+        }
+      }
+    },
+    {
+      "id": "start_enters_spoken_briefing",
+      "given": { "view": "today", "locale": "en-IN", "screenInstanceId": 3, "generation": 3, "sessionId": null },
+      "event": { "type": "START_OR_RESUME" },
+      "expected": {
+        "view": "briefing",
+        "screenInstanceId": 4,
+        "generation": 4,
+        "createPinnedSession": "recipe-paneer-v1",
+        "cancelPreviousSpeech": true,
+        "currentPromptMessageId": "briefing.summary",
+        "speechByLocale": {
+          "en-IN": ["Start. paneer and spinach. First, check the ingredients.", "paneer and spinach for four people. Ready by one o'clock. Use less chilli. Press Check ingredients."],
+          "hi-IN": ["शुरू करें। पालक पनीर। पहले सामग्री जाँचें।", "चार लोगों के लिए पालक पनीर। एक बजे तक तैयार करें। मिर्च कम डालें। सामग्री जाँचें बटन दबाएँ।"]
+        }
+      }
+    },
+    {
+      "id": "check_ingredients_enters_first_item",
+      "given": { "view": "briefing", "locale": "en-IN", "screenInstanceId": 4, "generation": 4, "ingredientIndex": 0 },
+      "event": { "type": "CHECK_INGREDIENTS" },
+      "expected": {
+        "view": "ingredient",
+        "screenInstanceId": 5,
+        "generation": 5,
+        "ingredientIndex": 0,
+        "currentPromptMessageId": "ingredient.prompt",
+        "speechByLocale": {
+          "en-IN": ["Check ingredients. We will check one at a time.", "Ingredient 1 of 4. Do you have one cup of spinach?"],
+          "hi-IN": ["सामग्री जाँचें। हम एक बार में एक सामग्री जाँचेंगे।", "कुल 4 में से सामग्री 1। क्या आपके पास एक कप पालक है?"]
+        }
+      }
+    },
+    {
+      "id": "have_it_advances_once",
+      "given": { "view": "ingredient", "locale": "en-IN", "screenInstanceId": 5, "generation": 5, "ingredientIndex": 0, "revision": 1 },
+      "event": { "type": "HAVE", "idempotencyKey": "session-001:have_it:ingredient-spinach:2" },
+      "expected": {
+        "view": "ingredient",
+        "ingredientIndex": 1,
+        "revision": 2,
+        "generation": 6,
+        "persist": ["ingredient-spinach=have", "ingredientIndex=1"],
+        "currentPromptMessageId": "ingredient.prompt",
+        "speechByLocale": {
+          "en-IN": ["Have it. Next ingredient. two tomatoes."],
+          "hi-IN": ["यह है। अगली सामग्री। दो टमाटर।"]
+        }
+      }
+    },
+    {
+      "id": "missing_notifies_and_advances_once",
+      "given": { "view": "ingredient", "locale": "en-IN", "screenInstanceId": 5, "generation": 6, "ingredientIndex": 1, "revision": 2 },
+      "event": { "type": "MISSING", "idempotencyKey": "session-001:missing:ingredient-tomato:3" },
+      "expected": {
+        "view": "ingredient",
+        "ingredientIndex": 2,
+        "revision": 3,
+        "generation": 7,
+        "persist": ["ingredient-tomato=missing", "ingredientIndex=2"],
+        "enqueueIssueOnce": "ingredient-tomato",
+        "speechByLocale": {
+          "en-IN": ["Missing. The homeowner has been told. Next ingredient. two hundred and fifty grams of paneer."],
+          "hi-IN": ["यह नहीं है। घर के मालिक को बता दिया गया है। अगली सामग्री। दो सौ पचास ग्राम पनीर।"]
+        }
+      }
+    },
+    {
+      "id": "start_cooking_enters_first_step",
+      "given": { "view": "ingredient", "locale": "en-IN", "screenInstanceId": 8, "generation": 8, "ingredientIndex": 3, "ingredientsComplete": true, "revision": 5 },
+      "event": { "type": "START_COOKING", "idempotencyKey": "session-001:start_cooking:recipe-paneer-v1:6" },
+      "expected": {
+        "view": "cook",
+        "screenInstanceId": 9,
+        "generation": 9,
+        "stepIndex": 0,
+        "revision": 6,
+        "currentPromptMessageId": "cook.step_entry",
+        "speechByLocale": {
+          "en-IN": ["Start cooking.", "Step 1 of 4. Wash the spinach well."],
+          "hi-IN": ["खाना बनाना शुरू करें।", "कुल 4 में से चरण 1। पालक को अच्छी तरह धो लें।"]
+        }
+      }
+    },
+    {
+      "id": "repeat_announces_label_and_replays_without_mutation",
+      "given": { "view": "cook", "locale": "en-IN", "screenInstanceId": 9, "generation": 10, "stepIndex": 2, "revision": 7, "currentPromptMessageId": "cook.step_entry" },
+      "event": { "type": "REPEAT" },
+      "expected": {
+        "view": "cook",
+        "stepIndex": 2,
+        "revision": 7,
+        "generation": 11,
+        "cancelPreviousSpeech": true,
+        "domainMutation": false,
+        "speechByLocale": {
+          "en-IN": ["Repeat.", "Step 3 of 4. Stir on medium heat for two minutes."],
+          "hi-IN": ["फिर से सुनें।", "कुल 4 में से चरण 3। मध्यम आँच पर दो मिनट चलाएँ।"]
+        }
+      }
+    },
+    {
+      "id": "next_persists_then_speaks_new_full_step",
+      "given": { "view": "cook", "locale": "en-IN", "screenInstanceId": 9, "generation": 8, "stepIndex": 1, "revision": 6 },
+      "event": { "type": "NEXT", "idempotencyKey": "session-001:next:step-add:7" },
+      "expected": {
+        "view": "cook",
+        "stepIndex": 2,
+        "revision": 7,
+        "generation": 9,
+        "persistBeforeSpeech": ["step-add=complete", "stepIndex=2"],
+        "currentPromptMessageId": "cook.step_entry",
+        "speechByLocale": {
+          "en-IN": ["Next. Step 3 of 4. Stir on medium heat for two minutes."],
+          "hi-IN": ["अगला। कुल 4 में से चरण 3। मध्यम आँच पर दो मिनट चलाएँ।"]
+        }
+      }
+    },
+    {
+      "id": "rapid_duplicate_next_is_ignored",
+      "given": { "view": "cook", "locale": "en-IN", "screenInstanceId": 9, "generation": 9, "stepIndex": 2, "revision": 7, "acceptedIdempotencyKeys": ["session-001:next:step-stir:8"] },
+      "event": { "type": "NEXT", "idempotencyKey": "session-001:next:step-stir:8" },
+      "expected": {
+        "view": "cook",
+        "stepIndex": 2,
+        "revision": 7,
+        "generation": 9,
+        "domainMutation": false,
+        "speech": [],
+        "reason": "duplicate event already accepted"
+      }
+    },
+    {
+      "id": "stop_cancels_speech_and_deferred_timer",
+      "given": { "view": "cook", "locale": "en-IN", "screenInstanceId": 9, "generation": 12, "speechStatus": "speaking", "stepIndex": 2, "revision": 7, "deferredEffect": "start-timer-step-stir" },
+      "event": { "type": "STOP" },
+      "expected": {
+        "view": "cook",
+        "stepIndex": 2,
+        "revision": 7,
+        "generation": 13,
+        "cancelPreviousSpeech": true,
+        "cancelDeferredEffects": ["start-timer-step-stir"],
+        "timerStatus": "pending",
+        "currentPromptPreserved": true,
+        "speechByLocale": {
+          "en-IN": ["Stop."],
+          "hi-IN": ["रोकें।"]
+        }
+      }
+    },
+    {
+      "id": "language_change_cancels_old_voice_and_replays_semantic_prompt",
+      "given": { "view": "cook", "returnView": null, "locale": "en-IN", "screenInstanceId": 9, "generation": 13, "stepIndex": 2, "currentPromptMessageId": "cook.step_entry" },
+      "events": [
+        { "type": "OPEN_LANGUAGE" },
+        { "type": "SELECT_LANGUAGE", "locale": "hi-IN" },
+        { "type": "CONTINUE" }
+      ],
+      "expected": {
+        "view": "cook",
+        "locale": "hi-IN",
+        "screenInstanceId": 11,
+        "generation": 16,
+        "cancelAtEveryEvent": true,
+        "persist": ["user.spokenLocale=hi-IN"],
+        "dropQueuedLocale": "en-IN",
+        "speech": [
+          { "locale": "en-IN", "text": "Change language." },
+          { "locale": "en-IN", "text": "Choose your language. Each button says its language aloud." },
+          { "locale": "hi-IN", "text": "हिन्दी।" },
+          { "locale": "hi-IN", "text": "हिन्दी चुनी गई है। आगे बढ़ें बटन दबाएँ।" },
+          { "locale": "hi-IN", "text": "आगे बढ़ें।" },
+          { "locale": "hi-IN", "text": "कुल 4 में से चरण 3। मध्यम आँच पर दो मिनट चलाएँ।" }
+        ]
+      }
+    },
+    {
+      "id": "help_issue_is_idempotent_and_back_restores_prompt",
+      "given": { "view": "cook", "locale": "en-IN", "screenInstanceId": 12, "generation": 16, "stepIndex": 2, "revision": 7 },
+      "events": [
+        { "type": "HELP" },
+        { "type": "INSTRUCTION_UNCLEAR", "idempotencyKey": "session-001:instruction_unclear:step-stir:7" },
+        { "type": "BACK" }
+      ],
+      "expected": {
+        "view": "cook",
+        "stepIndex": 2,
+        "revision": 7,
+        "enqueueIssueOnce": "instruction_unclear:step-stir",
+        "speechByLocale": {
+          "en-IN": ["Help. Choose Repeat instruction, Ingredient missing, Instruction unclear, Tell homeowner, or Go back.", "Instruction unclear. The homeowner has been told.", "Go back.", "Step 3 of 4. Stir on medium heat for two minutes."],
+          "hi-IN": ["मदद। फिर से सुनें, सामग्री नहीं है, बात समझ नहीं आई, घर के मालिक को बताएँ, या पीछे जाएँ चुनें।", "बात समझ नहीं आई। घर के मालिक को बता दिया गया है।", "पीछे जाएँ।", "कुल 4 में से चरण 3। मध्यम आँच पर दो मिनट चलाएँ।"]
+        }
+      }
+    },
+    {
+      "id": "focal_visual_speaks_description_without_progress",
+      "given": { "view": "cook", "locale": "en-IN", "screenInstanceId": 12, "generation": 19, "stepIndex": 1, "revision": 6, "focalVisualId": "visual-add-spinach-approved" },
+      "event": { "type": "ACTIVATE_FOCAL_VISUAL" },
+      "expected": {
+        "view": "cook",
+        "stepIndex": 1,
+        "revision": 6,
+        "domainMutation": false,
+        "speechByLocale": {
+          "en-IN": ["Picture. Spinach being added to the pan."],
+          "hi-IN": ["तस्वीर। कड़ाही में पालक डाला जा रहा है।"]
+        }
+      }
+    },
+    {
+      "id": "online_media_controls_are_user_initiated",
+      "given": { "view": "cook", "locale": "en-IN", "screenInstanceId": 12, "generation": 20, "stepIndex": 2, "online": true, "mediaAssetId": "media-youtube-stir", "mediaStatus": "stopped" },
+      "events": [
+        { "type": "SHOW_HOW" },
+        { "type": "PLAY" },
+        { "type": "PAUSE" },
+        { "type": "REPLAY_MEDIA" },
+        { "type": "BACK" }
+      ],
+      "expected": {
+        "view": "cook",
+        "stepIndex": 2,
+        "autoplay": false,
+        "useOfficialAttributedPlayer": true,
+        "cachedStandaloneClip": false,
+        "appSpeechAndMediaOverlap": false,
+        "speechByLocale": {
+          "en-IN": ["Show how. Stir the spinach slowly in the pan. Press Play to start.", "Play.", "Pause.", "Replay.", "Go back.", "Step 3 of 4. Stir on medium heat for two minutes."],
+          "hi-IN": ["तरीका देखें। कड़ाही में पालक को धीरे-धीरे चलाएँ। शुरू करने के लिए चलाएँ बटन दबाएँ।", "चलाएँ।", "रोकें।", "फिर चलाएँ।", "पीछे जाएँ।", "कुल 4 में से चरण 3। मध्यम आँच पर दो मिनट चलाएँ।"]
+        }
+      }
+    },
+    {
+      "id": "offline_optional_media_returns_to_step",
+      "given": { "view": "cook", "locale": "en-IN", "screenInstanceId": 12, "generation": 20, "stepIndex": 2, "online": false, "mediaAssetId": "media-youtube-stir" },
+      "event": { "type": "SHOW_HOW" },
+      "expected": {
+        "view": "cook",
+        "stepIndex": 2,
+        "generation": 21,
+        "mediaStarted": false,
+        "speechByLocale": {
+          "en-IN": ["Show how.", "This video needs the internet. Returning to the cooking step.", "Step 3 of 4. Stir on medium heat for two minutes."],
+          "hi-IN": ["तरीका देखें।", "इस वीडियो के लिए इंटरनेट चाहिए। खाना बनाने वाले चरण पर वापस जा रहे हैं।", "कुल 4 में से चरण 3। मध्यम आँच पर दो मिनट चलाएँ।"]
+        }
+      }
+    },
+    {
+      "id": "timer_start_and_elapsed_interrupt",
+      "given": { "view": "cook", "locale": "en-IN", "screenInstanceId": 12, "generation": 21, "stepIndex": 2, "timerStatus": "pending", "revision": 7 },
+      "events": [
+        { "type": "START_TIMER", "idempotencyKey": "session-001:start_timer:step-stir:8" },
+        { "type": "TIMER_ELAPSED", "timerId": "timer-step-stir" }
+      ],
+      "expected": {
+        "view": "cook",
+        "stepIndex": 2,
+        "timerStatus": "elapsed",
+        "cancelOrdinarySpeechOnElapsed": true,
+        "overlapAllowed": false,
+        "currentPromptMessageId": "cook.step_entry",
+        "speechByLocale": {
+          "en-IN": ["Start timer. two minutes. The timer is running.", "NONVERBAL_ALARM_CUE", "Timer finished for step 3. Press Repeat to hear the step again, or Next when ready."],
+          "hi-IN": ["टाइमर शुरू करें। दो मिनट। टाइमर चल रहा है।", "NONVERBAL_ALARM_CUE", "चरण 3 का टाइमर पूरा हुआ। चरण फिर सुनने के लिए फिर से सुनें दबाएँ, या तैयार होने पर अगला दबाएँ।"]
+        }
+      }
+    },
+    {
+      "id": "resume_recomputes_timer_and_announces_step_once",
+      "given": { "view": "audio_gate", "locale": "en-IN", "persistedStepIndex": 2, "persistedRecipeVersionId": "recipe-paneer-v1", "timerEndsAt": "2026-08-30T07:32:00.000Z", "now": "2026-08-30T07:31:15.000Z" },
+      "event": { "type": "RESTORE" },
+      "expected": {
+        "view": "cook",
+        "stepIndex": 2,
+        "timerStatus": "running",
+        "timerRemainingSeconds": 45,
+        "entryAnnouncementCount": 1,
+        "speechByLocale": {
+          "en-IN": ["Welcome back. Step 3 of 4. Stir on medium heat for two minutes."],
+          "hi-IN": ["आप वापस आ गए हैं। कुल 4 में से चरण 3। मध्यम आँच पर दो मिनट चलाएँ।"]
+        }
+      }
+    },
+    {
+      "id": "audio_failure_preserves_progress_and_offers_recovery",
+      "given": { "view": "cook", "locale": "en-IN", "screenInstanceId": 13, "generation": 24, "stepIndex": 2, "revision": 7, "cachedErrorPhraseAvailable": true },
+      "event": { "type": "AUDIO_ERROR", "reason": "synthesis_timeout" },
+      "expected": {
+        "view": "audio_error",
+        "returnView": "cook",
+        "stepIndex": 2,
+        "revision": 7,
+        "generation": 25,
+        "progressPreserved": true,
+        "automaticRetryCount": 1,
+        "speechByLocale": {
+          "en-IN": ["Sound is not working. Press Try sound again, or Tell homeowner."],
+          "hi-IN": ["आवाज़ काम नहीं कर रही है। आवाज़ फिर चलाएँ, या घर के मालिक को बताएँ बटन दबाएँ।"]
+        }
+      }
+    },
+    {
+      "id": "audio_failure_without_any_source_is_visual_and_haptic",
+      "given": { "view": "cook", "locale": "hi-IN", "screenInstanceId": 13, "generation": 25, "stepIndex": 2, "readiness": "not_ready", "cachedErrorPhraseAvailable": false },
+      "event": { "type": "AUDIO_ERROR", "reason": "no_compatible_voice" },
+      "expected": {
+        "view": "audio_error",
+        "returnView": "cook",
+        "speech": [],
+        "visualState": "large_sound_error",
+        "hapticPattern": "error_if_supported",
+        "controls": ["retry_audio", "tell_homeowner"],
+        "silentSuccessForbidden": true
+      }
+    },
+    {
+      "id": "retry_audio_returns_and_replays_current_prompt",
+      "given": { "view": "audio_error", "returnView": "cook", "locale": "en-IN", "screenInstanceId": 14, "generation": 25, "stepIndex": 2, "compatibleDeviceVoice": true },
+      "event": { "type": "RETRY_AUDIO" },
+      "expected": {
+        "view": "cook",
+        "readiness": "ready_device_tts",
+        "generation": 26,
+        "speechByLocale": {
+          "en-IN": ["Try sound again. Checking sound.", "Sound is working. Step 3 of 4. Stir on medium heat for two minutes."],
+          "hi-IN": ["आवाज़ फिर चलाएँ। आवाज़ की जाँच हो रही है।", "आवाज़ काम कर रही है। कुल 4 में से चरण 3। मध्यम आँच पर दो मिनट चलाएँ।"]
+        }
+      }
+    },
+    {
+      "id": "stale_callback_cannot_play_or_start_timer",
+      "given": { "view": "cook", "locale": "hi-IN", "assignmentId": "assignment-paneer-001", "recipeVersionId": "recipe-paneer-v1", "screenInstanceId": 20, "generation": 30 },
+      "event": {
+        "type": "SPEECH_CALLBACK",
+        "callback": "onend",
+        "token": { "assignmentId": "assignment-paneer-001", "recipeVersionId": "recipe-paneer-v1", "locale": "en-IN", "screenInstanceId": 19, "generation": 29 },
+        "deferredEffect": "start-timer-step-stir"
+      },
+      "expected": {
+        "accepted": false,
+        "speech": [],
+        "timerStatus": "pending",
+        "domainMutation": false,
+        "reason": "locale, screenInstanceId, and generation mismatch"
+      }
+    },
+    {
+      "id": "final_next_enters_completion_then_done_notifies_once",
+      "given": { "view": "cook", "locale": "en-IN", "screenInstanceId": 21, "generation": 31, "stepIndex": 3, "revision": 8 },
+      "events": [
+        { "type": "NEXT", "idempotencyKey": "session-001:next:step-serve:9" },
+        { "type": "DONE", "idempotencyKey": "session-001:done:assignment-paneer-001:10" }
+      ],
+      "expected": {
+        "view": "completion",
+        "assignmentStatus": "done",
+        "stepIndex": 3,
+        "revision": 10,
+        "notifyHomeownerOnce": true,
+        "speechByLocale": {
+          "en-IN": ["Cooking complete. paneer and spinach is ready. Press Done to tell the homeowner.", "Done. The homeowner has been told."],
+          "hi-IN": ["खाना बन गया है। पालक पनीर तैयार है। घर के मालिक को बताने के लिए पूरा हुआ बटन दबाएँ।", "पूरा हुआ। घर के मालिक को बता दिया गया है।"]
+        }
+      }
+    },
+    {
+      "id": "revoked_assignment_cancels_and_hides_recipe",
+      "given": { "view": "cook", "locale": "en-IN", "screenInstanceId": 22, "generation": 33, "stepIndex": 1 },
+      "event": { "type": "ASSIGNMENT_REVOKED" },
+      "expected": {
+        "view": "today",
+        "recipeContentVisible": false,
+        "cancelPreviousSpeech": true,
+        "cancelMedia": true,
+        "cancelDeferredEffects": "all",
+        "speechByLocale": {
+          "en-IN": ["This cooking task is no longer available. Ask the homeowner for help."],
+          "hi-IN": ["खाना बनाने का यह काम अब उपलब्ध नहीं है। मदद के लिए घर के मालिक से पूछें।"]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "assignment": {
+    "id": "assignment-paneer-001",
+    "assigneeId": "househelp-rani-001",
+    "recipeVersionId": "recipe-paneer-v1",
+    "status": "scheduled",
+    "meal": "lunch",
+    "targetTime": "13:00",
+    "servings": 4,
+    "selectedLocale": "en-IN",
+    "translationStatus": {
+      "en-IN": "reviewed",
+      "hi-IN": "reviewed"
+    }
+  },
+  "recipe": {
+    "id": "recipe-paneer",
+    "versionId": "recipe-paneer-v1",
+    "sourceAttribution": "Reviewed sample recipe fixture",
+    "ingredients": [
+      {
+        "id": "ingredient-spinach",
+        "quantity": { "whole": 1, "numerator": 0, "denominator": 1, "unit": "cup" },
+        "visualAssetId": "visual-spinach-approved"
+      },
+      {
+        "id": "ingredient-tomato",
+        "quantity": { "whole": 2, "numerator": 0, "denominator": 1, "unit": "count" },
+        "visualAssetId": "visual-tomato-prohibited"
+      },
+      {
+        "id": "ingredient-paneer",
+        "quantity": { "whole": 250, "numerator": 0, "denominator": 1, "unit": "gram" },
+        "visualAssetId": null
+      },
+      {
+        "id": "ingredient-chilli",
+        "quantity": { "whole": 0, "numerator": 1, "denominator": 2, "unit": "teaspoon" },
+        "visualAssetId": null
+      }
+    ],
+    "steps": [
+      {
+        "id": "step-wash",
+        "action": "wash",
+        "timer": null,
+        "visualAssetId": "icon-wash-bundled",
+        "mediaAssetId": null
+      },
+      {
+        "id": "step-add",
+        "action": "add",
+        "timer": null,
+        "visualAssetId": "visual-add-spinach-approved",
+        "mediaAssetId": null
+      },
+      {
+        "id": "step-stir",
+        "action": "stir",
+        "timer": { "durationSeconds": 120, "startMode": "explicit" },
+        "visualAssetId": null,
+        "mediaAssetId": "media-youtube-stir"
+      },
+      {
+        "id": "step-serve",
+        "action": "serve",
+        "timer": null,
+        "visualAssetId": "icon-serve-bundled",
+        "mediaAssetId": null
+      }
+    ]
+  },
+  "translations": {
+    "en-IN": {
+      "dish": "paneer and spinach",
+      "meal": "lunch",
+      "servingsSpeech": "four people",
+      "targetTimeSpeech": "one o'clock",
+      "note": "Use less chilli.",
+      "ingredients": {
+        "ingredient-spinach": { "singular": "spinach", "plural": "spinach", "quantitySpeech": "one cup of spinach", "preparation": "washed", "visualDescription": "Fresh spinach leaves" },
+        "ingredient-tomato": { "singular": "tomato", "plural": "tomatoes", "quantitySpeech": "two tomatoes", "preparation": "chopped", "visualDescription": "Two red tomatoes" },
+        "ingredient-paneer": { "singular": "gram of paneer", "plural": "grams of paneer", "quantitySpeech": "two hundred and fifty grams of paneer", "preparation": "cubed", "visualDescription": "Paneer cut into cubes" },
+        "ingredient-chilli": { "singular": "teaspoon of chilli powder", "plural": "teaspoons of chilli powder", "quantitySpeech": "half a teaspoon of chilli powder", "preparation": "", "visualDescription": "Red chilli powder" }
+      },
+      "steps": {
+        "step-wash": { "instruction": "Wash the spinach well.", "visualDescription": "Spinach being washed in a bowl" },
+        "step-add": { "instruction": "Now add one cup of spinach.", "visualDescription": "Spinach being added to the pan" },
+        "step-stir": { "instruction": "Stir on medium heat for two minutes.", "visualDescription": "Stir the spinach slowly in the pan", "durationSpeech": "two minutes" },
+        "step-serve": { "instruction": "Turn off the heat and serve.", "visualDescription": "Serve the cooked paneer and spinach" }
+      }
+    },
+    "hi-IN": {
+      "dish": "पालक पनीर",
+      "meal": "दोपहर के खाने",
+      "servingsSpeech": "चार लोगों",
+      "targetTimeSpeech": "एक",
+      "note": "मिर्च कम डालें।",
+      "ingredients": {
+        "ingredient-spinach": { "singular": "पालक", "plural": "पालक", "quantitySpeech": "एक कप पालक", "preparation": "धुला हुआ", "visualDescription": "ताज़े पालक के पत्ते" },
+        "ingredient-tomato": { "singular": "टमाटर", "plural": "टमाटर", "quantitySpeech": "दो टमाटर", "preparation": "कटे हुए", "visualDescription": "दो लाल टमाटर" },
+        "ingredient-paneer": { "singular": "ग्राम पनीर", "plural": "ग्राम पनीर", "quantitySpeech": "दो सौ पचास ग्राम पनीर", "preparation": "टुकड़ों में कटा हुआ", "visualDescription": "टुकड़ों में कटा पनीर" },
+        "ingredient-chilli": { "singular": "छोटा चम्मच लाल मिर्च पाउडर", "plural": "छोटे चम्मच लाल मिर्च पाउडर", "quantitySpeech": "आधा छोटा चम्मच लाल मिर्च पाउडर", "preparation": "", "visualDescription": "लाल मिर्च पाउडर" }
+      },
+      "steps": {
+        "step-wash": { "instruction": "पालक को अच्छी तरह धो लें।", "visualDescription": "कटोरे में पालक धोया जा रहा है" },
+        "step-add": { "instruction": "अब एक कप पालक डालें।", "visualDescription": "कड़ाही में पालक डाला जा रहा है" },
+        "step-stir": { "instruction": "मध्यम आँच पर दो मिनट चलाएँ।", "visualDescription": "कड़ाही में पालक को धीरे-धीरे चलाएँ", "durationSpeech": "दो मिनट" },
+        "step-serve": { "instruction": "आँच बंद करें और परोसें।", "visualDescription": "पका हुआ पालक पनीर परोसें" }
+      }
+    }
+  },
+  "visualAssets": [
+    {
+      "id": "visual-spinach-approved",
+      "kind": "ingredient_photo",
+      "purpose": "identify_ingredient",
+      "verification": "approved",
+      "rights": "licensed",
+      "attribution": "Fixture-only licensed asset placeholder",
+      "spokenDescriptionPath": "translations.{locale}.ingredients.ingredient-spinach.visualDescription"
+    },
+    {
+      "id": "visual-tomato-prohibited",
+      "kind": "ingredient_photo",
+      "purpose": "identify_ingredient",
+      "verification": "approved",
+      "rights": "prohibited",
+      "attribution": "Must never render",
+      "spokenDescriptionPath": null
+    },
+    {
+      "id": "visual-add-spinach-approved",
+      "kind": "step_image",
+      "purpose": "show_action",
+      "verification": "approved",
+      "rights": "user_owned_confirmed",
+      "attribution": "Fixture homeowner upload",
+      "spokenDescriptionPath": "translations.{locale}.steps.step-add.visualDescription"
+    },
+    {
+      "id": "icon-wash-bundled",
+      "kind": "action_icon",
+      "purpose": "show_action",
+      "verification": "approved",
+      "rights": "bundled",
+      "attribution": "Application icon set",
+      "spokenDescriptionPath": "translations.{locale}.steps.step-wash.visualDescription"
+    },
+    {
+      "id": "icon-stir-bundled",
+      "kind": "action_icon",
+      "purpose": "show_action",
+      "verification": "approved",
+      "rights": "bundled",
+      "attribution": "Application icon set",
+      "spokenDescriptionPath": "translations.{locale}.steps.step-stir.visualDescription"
+    },
+    {
+      "id": "icon-serve-bundled",
+      "kind": "action_icon",
+      "purpose": "show_action",
+      "verification": "approved",
+      "rights": "bundled",
+      "attribution": "Application icon set",
+      "spokenDescriptionPath": "translations.{locale}.steps.step-serve.visualDescription"
+    },
+    {
+      "id": "state-ingredient-bundled",
+      "kind": "state_icon",
+      "purpose": "show_state",
+      "verification": "approved",
+      "rights": "bundled",
+      "attribution": "Application icon set",
+      "spokenDescriptionPath": null
+    }
+  ],
+  "fallbackIcons": {
+    "ingredient": "state-ingredient-bundled",
+    "actions": {
+      "wash": "icon-wash-bundled",
+      "add": "visual-add-spinach-approved",
+      "stir": "icon-stir-bundled",
+      "serve": "icon-serve-bundled"
+    }
+  },
+  "mediaAssets": [
+    {
+      "id": "media-youtube-stir",
+      "kind": "youtube_embed",
+      "verification": "approved",
+      "rights": "source_embed_allowed",
+      "sourceVideoId": "fixture-video-id",
+      "sourceTimestampSeconds": 194,
+      "cachePolicy": "metadata_only",
+      "autoplay": false,
+      "spokenDescriptionPath": "translations.{locale}.steps.step-stir.visualDescription"
+    }
+  ],
+  "visualResolutionExpectations": [
+    { "entityId": "ingredient-spinach", "expectedAssetId": "visual-spinach-approved", "reason": "approved exact photo" },
+    { "entityId": "ingredient-tomato", "expectedAssetId": "state-ingredient-bundled", "reason": "prohibited photo falls back" },
+    { "entityId": "step-stir", "expectedAssetId": "icon-stir-bundled", "reason": "no exact visual falls back to approved action icon" }
+  ],
+  "readinessScenarios": [
+    { "id": "all_exact_audio_cached", "online": false, "compatibleDeviceVoice": false, "allEssentialAudioCached": true, "allReviewedTextStored": true, "expected": "ready_cached_audio" },
+    { "id": "device_voice_offline", "online": false, "compatibleDeviceVoice": true, "allEssentialAudioCached": false, "allReviewedTextStored": true, "expected": "ready_device_tts" },
+    { "id": "no_offline_speech_source", "online": false, "compatibleDeviceVoice": false, "allEssentialAudioCached": false, "allReviewedTextStored": true, "expected": "not_ready" },
+    { "id": "missing_reviewed_translation", "online": true, "compatibleDeviceVoice": true, "allEssentialAudioCached": false, "allReviewedTextStored": false, "expected": "not_ready" }
+  ]
+}
