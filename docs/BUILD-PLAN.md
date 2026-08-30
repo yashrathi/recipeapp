@@ -1,6 +1,6 @@
 # Build Plan
 
-Status: Milestone 1 implemented and independently verified locally on 2026-08-30. Later milestones remain proposed.
+Status: Milestone 1 implemented and independently verified locally on 2026-08-30. Milestone 2 was approved for implementation on 2026-08-30; later milestones remain proposed.
 
 The sequence uses complete vertical slices. Later milestones may change after user research and integration discovery.
 
@@ -35,17 +35,33 @@ Acceptance achieved locally:
 - Automated keyboard/focus/labels/touch-target/responsive checks and deterministic spoken-feedback cases pass; real TalkBack/VoiceOver and device-voice validation remain required before production.
 - `STATE`, `HISTORY`, `MEMORY`, `RUNBOOK`, and decisions are current.
 
-## Proposed Milestone 2: YouTube transcript import
+## Milestone 2: Broad-source recipe import
 
-Goal: add public YouTube URLs while preserving transcript evidence and safe failure behavior.
+Status: approved; implementation is active on an isolated worker branch.
 
-Acceptance outline:
+Goal: make the existing reviewed import workflow work across more public recipe webpages and public YouTube videos without inventing recipe content.
 
-- Caption/transcript availability is detected and language recorded.
-- Recipe fields link back to transcript timestamps where evidence exists.
+Approved vertical slices:
+
+1. Repair the Node 24 live-fetch DNS callback and retain the existing public-network, redirect, content-type, timeout, and size protections.
+2. Keep native HTML fetch and deterministic Schema.org extraction as the first path; use Firecrawl as a configured fallback for eligible public webpage fetch/extraction failures.
+3. Use OpenAI structured extraction only when deterministic webpage extraction is incomplete or the source is a YouTube transcript. Require source evidence and preserve warnings/review state.
+4. Accept canonical public YouTube watch/share URLs, request available transcript text through Firecrawl, record transcript language when supplied, and fail to manual entry when usable transcript evidence is absent.
+5. Extend the existing persisted import lifecycle and homeowner review UI with source/provider status, recoverable errors, and explicit manual fallback. Do not introduce a separate queue until measured latency or deployment limits require one.
+6. Verify webpage success, partial success, provider failure, transcript success, missing transcript, permissions, keyboard/focus/labels, and narrow-screen behavior with deterministic fixtures and mocked providers.
+
+Acceptance gates:
+
+- Pinch-of-Yum-shaped public HTML succeeds through a mocked Firecrawl fallback when direct fetch cannot provide usable content.
+- A blocked or contractually unsupported source such as Allrecipes fails clearly to manual entry; Firecrawl success is never assumed for every domain.
+- Caption/transcript availability is detected and language recorded when the provider supplies it.
+- Recipe fields link back to transcript timestamps only where timestamp evidence exists; untimed transcript evidence remains attributed without fabricated timing.
 - Optional video help uses the attributed official YouTube player at the relevant timestamp; the app does not create or cache standalone YouTube clips.
 - Missing transcript and ambiguous extraction have recoverable review states.
-- Cost, retention, platform terms, and transcription fallback are documented.
+- Firecrawl and OpenAI calls are server-only, bounded, mock-tested, and disabled cleanly when credentials are absent.
+- Recipe/transcript content is not retained by OpenAI beyond request processing (`store: false`); the app persists only the source/evidence needed by its reviewed draft workflow.
+- No YouTube Data API key, browser cookies, `yt-dlp`, downloaded video/audio, invented nutrition, or invented servings/times are part of this milestone.
+- Cost, retention, platform terms, and transcription limits are documented.
 
 ## Proposed Milestone 3: Household shopping list
 

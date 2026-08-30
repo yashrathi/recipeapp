@@ -4,7 +4,7 @@ Updated: 2026-08-30
 
 ## Current milestone
 
-Milestone 1 is integrated and verified locally on `main`: public webpage recipe import through homeowner review and immutable bilingual assignment to an audio-first, visually assisted househelp cook mode.
+Milestone 2 is approved and in implementation: broaden the reviewed recipe-import workflow to more public webpages through a Firecrawl fallback and to public YouTube videos through available transcript evidence plus OpenAI structured extraction. Milestone 1 remains integrated and verified locally on `main`.
 
 ## Integrated task branches and worktrees
 
@@ -13,8 +13,9 @@ Milestone 1 is integrated and verified locally on `main`: public webpage recipe 
 - Visible import task `01a05153-f172-7252-8c79-bea624f25d53`, branch `feature/web-recipe-import`, at `/Users/yashmac16/.codex/worktrees/1283/Recipe App`
 - Visible househelp task `01a05153-f6f9-71c0-9997-699f2235d8ac`, branch `feature/househelp-cook-mode`, at `/Users/yashmac16/.codex/worktrees/85f5/Recipe App`
 - Visible acceptance-review task `01a05154-027f-7cc2-a232-a7dedd36ac8c`, branch `review/milestone-1-acceptance`, at `/Users/yashmac16/.codex/worktrees/840f/Recipe App`
+- Active Milestone 2 worker `/root/broad_source_import`, branch `feature/broad-source-import`, at `/Users/yashmac16/Documents/ChatGPT/Recipe App-broad-source-import`
 
-All accepted worker commits are cherry-picked to `main`. The worktrees are retained only for review history; there is no active implementation worker.
+All Milestone 1 worker commits are cherry-picked to `main`. Those worktrees are retained only for review history. The Milestone 2 worker output must not be merged without explicit authorization.
 
 ## Working behavior
 
@@ -27,7 +28,7 @@ All accepted worker commits are cherry-picked to `main`. The worktrees are retai
 
 ## Blockers
 
-- None for the local Milestone 1 release candidate.
+- No implementation blocker. Live provider acceptance requires server-side `FIRECRAWL_API_KEY` and `OPENAI_API_KEY`; deterministic tests must not require either secret.
 - Official Swiggy or alternative grocery-provider API/partnership capability remains unverified and out of scope.
 
 ## Risks
@@ -35,9 +36,11 @@ All accepted worker commits are cherry-picked to `main`. The worktrees are retai
 - Extraction quality and source/platform permissions.
 - English/Hindi wording and pronunciation, kitchen audibility, first-tap audio, TalkBack/VoiceOver behavior, vibration/alarms, and offline/background behavior still need real Android/iOS validation and low-literacy user sessions.
 - Webpage parsing is deliberately bounded and deterministic; wider public-site coverage and source terms still require discovery.
+- Firecrawl does not guarantee access to every domain. Allrecipes currently blocks or restricts automated access, so the product must surface manual entry rather than bypass site controls.
+- Public YouTube pages do not always expose a usable transcript, and Firecrawl transcript output may omit timestamps or language metadata. The importer must preserve that uncertainty.
 - Bundled illustrations have safe fallbacks, but any future external recipe imagery needs explicit rights and content review.
 - Grocery catalog matching and checkout scope depend on provider access.
 
 ## Immediate next step
 
-Run assisted sessions with real househelp users on representative Android/iOS devices. Record language comprehension, tap errors, kitchen audibility, recovery from lost connectivity, and caregiver/homeowner setup friction before selecting production identity, datastore, and hosting.
+Complete the approved Milestone 2 worker slices and acceptance review, then request explicit authorization before integrating the worker branch into `main`. Real-device househelp sessions remain required before production selection.
