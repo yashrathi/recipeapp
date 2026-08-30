@@ -196,7 +196,7 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
           headers: { "content-type": "application/json" },
           body: JSON.stringify(mutation.body),
         });
-        if (!response.ok && response.status !== 409) remaining.push(mutation);
+        if (!response.ok) remaining.push(mutation);
       } catch {
         remaining.push(mutation);
       }
@@ -493,9 +493,9 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
       <section className={styles.screen} aria-labelledby="today-title">
         <p className={styles.kicker}>{localized.meal} · {snapshot.assignment.targetTime}</p>
         <h1 id="today-title" ref={headingRef} tabIndex={-1}>{localized.dish}</h1>
-        <button className={styles.heroVisual} type="button" aria-label={localized.dish} onClick={() => void runEvent({ type: "REPEAT" })}>
-          <Image src="/househelp/state-dish.svg" alt="" width={280} height={220} priority />
-        </button>
+        <div className={styles.heroVisual}>
+          <Image src="/househelp/state-dish.svg" alt={localized.dish} width={280} height={220} priority />
+        </div>
         <p className={styles.bigMeta}>{localized.servingsSpeech}</p>
         <button className={styles.primaryButton} type="button" onClick={() => void runEvent({ type: "START_OR_RESUME" })}>
           <span aria-hidden="true">▶</span>

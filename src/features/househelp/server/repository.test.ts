@@ -279,6 +279,14 @@ describe("househelp server authorization and progress persistence", () => {
     );
   });
 
+  it("does not offer a completed assignment as the next cooking task", () => {
+    client.prepare("UPDATE cooking_assignments SET status = 'done' WHERE id = ?")
+      .run(DEMO_IDS.assignment);
+    expect(repository.getVisible(actor)).toBeNull();
+    expect(repository.getVisible(actor, DEMO_IDS.assignment)?.snapshot.assignment.id)
+      .toBe(DEMO_IDS.assignment);
+  });
+
   it("rejects foreign ingredient IDs and inconsistent ingredient indexes without writing", () => {
     repository.mutate(actor, DEMO_IDS.assignment, {
       type: "start",

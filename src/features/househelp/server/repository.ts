@@ -382,7 +382,7 @@ export class HousehelpRepository {
               a.selected_locale, a.status
        FROM cooking_assignments a
        WHERE a.household_id = ? AND a.assignee_id = ?
-         AND a.status NOT IN ('cancelled', 'reassigned')
+         AND a.status NOT IN ('cancelled', 'reassigned', 'done')
        ORDER BY a.scheduled_date, a.target_time LIMIT 1`,
     ).get(actor.householdId, actor.userId) as AssignmentRow | undefined) ?? null;
   }

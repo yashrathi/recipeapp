@@ -147,6 +147,24 @@ test("409 and stalled progress responses cannot leave ingredient controls locked
   const haveButton = page.getByRole("button", { name: "यह है" });
   await expect(haveButton).toBeEnabled({ timeout: 500 });
   await expect(haveButton).toHaveAttribute("aria-busy", "false");
+  await expect.poll(() => page.evaluate(() => {
+    const key = Object.keys(window.localStorage).find((candidate) =>
+      candidate.startsWith("recipe-app:househelp:v1:"),
+    );
+    if (!key) return 0;
+    return (JSON.parse(window.localStorage.getItem(key) ?? "{}") as { pending?: unknown[] })
+      .pending?.length ?? 0;
+  })).toBe(2);
+  await page.evaluate(() => window.dispatchEvent(new Event("online")));
+  await page.waitForTimeout(3_300);
+  await expect.poll(() => page.evaluate(() => {
+    const key = Object.keys(window.localStorage).find((candidate) =>
+      candidate.startsWith("recipe-app:househelp:v1:"),
+    );
+    if (!key) return 0;
+    return (JSON.parse(window.localStorage.getItem(key) ?? "{}") as { pending?: unknown[] })
+      .pending?.length ?? 0;
+  })).toBe(2);
 });
 
 test("househelp completes the audio-first cook flow on a narrow phone", completeCookFlow);

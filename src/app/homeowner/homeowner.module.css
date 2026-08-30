@@ -56,6 +56,7 @@
 
 .brand {
   display: inline-flex;
+  min-height: 44px;
   align-items: center;
   gap: 0.65rem;
   color: var(--ink);
@@ -113,7 +114,7 @@
   line-height: 0.96;
 }
 .pageHeader p:last-child, .listHeader p:last-child, .recipeHero p, .reviewHeader p { color: var(--muted); font-size: 1.08rem; }
-.breadcrumb { color: var(--forest); font-weight: 750; text-decoration: none; }
+.breadcrumb { display: inline-flex; min-height: 44px; align-items: center; color: var(--forest); font-weight: 750; text-decoration: none; }
 .breadcrumb:hover { text-decoration: underline; }
 
 .dashboardHero, .listHeader, .recipeHero, .reviewHeader {
@@ -149,7 +150,7 @@
 .secondaryLink, .secondaryButton { border: 1px solid var(--line); background: #fffdf7; color: var(--ink); }
 .secondaryLink:hover, .secondaryButton:hover { background: var(--paper-deep); }
 .primaryButton:disabled, .secondaryButton:disabled, .previewButton:disabled { cursor: not-allowed; opacity: 0.55; }
-.textLink { color: var(--forest); font-weight: 800; text-underline-offset: 0.2rem; }
+.textLink { display: inline-flex; min-height: 44px; align-items: center; color: var(--forest); font-weight: 800; text-underline-offset: 0.2rem; }
 
 .metricsGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin-bottom: 1rem; }
 .metricCard, .panel, .formCard, .reviewSection, .recipeCard, .progressCard, .successPanel {
@@ -208,6 +209,7 @@
 .fieldGroup { display: grid; gap: 0.38rem; }
 .fieldGroup label, .localeFieldset legend, .spokenCard label { font-weight: 800; }
 .fieldHint { margin: 0; }
+.spokenGrid > .fieldHint { grid-column: 1 / -1; }
 .formGrid, .threeColumnGrid, .spokenGrid { display: grid; gap: 1rem; }
 .formGrid { grid-template-columns: minmax(0, 2fr) minmax(9rem, 1fr); }
 .threeColumnGrid { grid-template-columns: 1.4fr 0.7fr 0.9fr; }
