@@ -28,6 +28,10 @@ const EnvironmentSchema = z.object({
     (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
     z.string().trim().min(1).optional(),
   ),
+  OPENAI_TRANSLATION_MODEL: z.preprocess(
+    (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.string().trim().min(1).optional(),
+  ),
   OPENAI_API_URL: z.url().default("https://api.openai.com/v1/responses"),
 });
 

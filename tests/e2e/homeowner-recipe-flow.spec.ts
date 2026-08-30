@@ -99,11 +99,16 @@ test("homeowner imports, reviews, publishes and assigns a recipe", async ({ page
   await expect(page.getByText("Original source line").first()).toBeVisible();
   await expect(page.getByText("500 g paneer", { exact: true }).first()).toBeVisible();
 
-  await page.getByLabel("Exact Hindi dish speech").fill("पालक पनीर");
-  await page.getByLabel("Exact Hindi speech").nth(0).fill("पाँच सौ ग्राम पनीर");
-  await page.getByLabel("Exact Hindi speech").nth(1).fill("दो कप पालक");
-  await page.getByLabel("Exact Hindi speech").nth(2).fill("पालक धोएँ।");
-  await page.getByLabel("Exact Hindi speech").nth(3).fill("पनीर डालें और पाँच मिनट पकाएँ।");
+  const hindiOverrides = page.getByLabel(/Hindi .*optional override/);
+  await expect(hindiOverrides).toHaveCount(5);
+  for (let index = 0; index < 5; index += 1) {
+    await expect(hindiOverrides.nth(index)).not.toHaveAttribute("required", "");
+  }
+  await page.getByLabel("Hindi dish speech (optional override)").fill("पालक पनीर");
+  await page.getByLabel("Hindi speech (optional override)").nth(0).fill("पाँच सौ ग्राम पनीर");
+  await page.getByLabel("Hindi speech (optional override)").nth(1).fill("दो कप पालक");
+  await page.getByLabel("Hindi speech (optional override)").nth(2).fill("पालक धोएँ।");
+  await page.getByLabel("Hindi speech (optional override)").nth(3).fill("पनीर डालें और पाँच मिनट पकाएँ।");
   await page.getByLabel(/I reviewed the ingredients/).check();
   await page.getByRole("button", { name: "Publish reviewed recipe" }).click();
 
@@ -116,7 +121,7 @@ test("homeowner imports, reviews, publishes and assigns a recipe", async ({ page
   await page.getByLabel("Servings").fill("3");
   await page.getByLabel("हिन्दी").check();
   await page.getByLabel("Exact English homeowner note").fill("Use less chilli");
-  await page.getByLabel("Exact Hindi homeowner note").fill("मिर्च कम डालें");
+  await page.getByLabel("Hindi homeowner note (optional override)").fill("मिर्च कम डालें");
   await page.getByLabel(/If I added a note/).check();
   const assignmentResponse = page.waitForResponse((response) =>
     response.url().endsWith("/api/homeowner/assignments") && response.request().method() === "POST",
@@ -125,7 +130,7 @@ test("homeowner imports, reviews, publishes and assigns a recipe", async ({ page
   const assignmentPayload = await (await assignmentResponse).json() as { id: string };
 
   await expect(page.getByRole("heading", { name: "Palak paneer is on the household plan" })).toBeVisible();
-  await expect(page.getByText("selected spoken guidance is reviewed and ready")).toBeVisible();
+  await expect(page.getByText("selected spoken guidance is complete and ready")).toBeVisible();
 
   await page.getByRole("link", { name: "Return to Today" }).click();
   await page.getByRole("button", { name: "Exit demo" }).click();

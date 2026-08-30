@@ -18,6 +18,12 @@ import {
 import { assertHomeowner } from "@/features/homeowner/server/authorization";
 import { authorize, type HouseholdActor } from "@/server/auth/policy";
 import { getDatabaseHandle } from "@/server/db/client";
+import {
+  HindiTranslationError,
+  OpenAIHindiTranslator,
+  type HindiTranslationItem,
+  type HindiTranslator,
+} from "@/server/translation/hindi";
 
 type DatabaseHandle = ReturnType<typeof getDatabaseHandle>;
 type ExtractionWarning = z.infer<typeof ExtractionWarningSchema>;
@@ -201,9 +207,14 @@ function targetTimeSpeech(targetTime: string | null, locale: HousehelpLocale): s
 
 export class HomeownerStore {
   private readonly client: DatabaseHandle["client"];
+  private readonly hindiTranslator: HindiTranslator;
 
-  constructor(handle: DatabaseHandle = getDatabaseHandle()) {
+  constructor(
+    handle: DatabaseHandle = getDatabaseHandle(),
+    hindiTranslator: HindiTranslator = new OpenAIHindiTranslator(),
+  ) {
     this.client = handle.client;
+    this.hindiTranslator = hindiTranslator;
   }
 
   private requireHomeowner(actor: HouseholdActor): void {
@@ -621,6 +632,7 @@ export class HomeownerStore {
     locale: "en-IN" | "hi-IN",
     speakableText: string,
     reviewed: boolean,
+    voiceVersion = "homeowner-preview-v1",
   ): void {
     const contentHash = createHash("sha256").update(speakableText, "utf8").digest("hex");
     this.client.prepare(
@@ -628,7 +640,7 @@ export class HomeownerStore {
          (id, recipe_version_id, guidance_key, step_id, interface_key, locale, speakable_text,
           content_hash, voice_version, review_status, audio_asset_id, cache_status,
           generation_status, cache_key, reviewed)
-       VALUES (?, ?, ?, ?, NULL, ?, ?, ?, 'homeowner-preview-v1', ?, NULL,
+       VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, NULL,
                'not_cached', 'ready', NULL, ?)`,
     ).run(
       randomUUID(),
@@ -638,9 +650,66 @@ export class HomeownerStore {
       locale,
       speakableText,
       contentHash,
+      voiceVersion,
       reviewed ? "reviewed" : "unreviewed",
       reviewed ? 1 : 0,
     );
+  }
+
+  private async translateToHindi(items: HindiTranslationItem[]): Promise<Map<string, string>> {
+    try {
+      const translations = await this.hindiTranslator.translate(items);
+      return new Map(translations.map(({ key, hindi }) => [key, hindi]));
+    } catch (error) {
+      if (error instanceof HindiTranslationError) {
+        throw new HomeownerValidationError(error.message, "HINDI_TRANSLATION_UNAVAILABLE", 503);
+      }
+      throw error;
+    }
+  }
+
+  private async generateMissingHindiGuidance(versionId: string): Promise<void> {
+    const missing = this.client.prepare(
+      `SELECT english.guidance_key AS guidanceKey, english.step_id AS stepId,
+              english.speakable_text AS english
+       FROM spoken_guidance english
+       LEFT JOIN spoken_guidance hindi
+         ON hindi.recipe_version_id = english.recipe_version_id
+        AND hindi.guidance_key = english.guidance_key
+        AND hindi.locale = 'hi-IN'
+       WHERE english.recipe_version_id = ?
+         AND english.locale = 'en-IN'
+         AND english.review_status = 'reviewed'
+         AND hindi.id IS NULL
+       ORDER BY english.guidance_key`,
+    ).all(versionId) as Array<{ guidanceKey: string; stepId: string | null; english: string }>;
+    if (missing.length === 0) return;
+    const translations = await this.translateToHindi(missing.map((row) => ({
+      key: row.guidanceKey,
+      english: row.english,
+      maxLength: row.guidanceKey === "recipe.dish" ? 1_000 : 2_000,
+    })));
+    this.client.transaction(() => {
+      for (const row of missing) {
+        const hindi = translations.get(row.guidanceKey);
+        if (!hindi) {
+          throw new HomeownerValidationError(
+            "Automatic Hindi translation did not return every recipe field. Try again.",
+            "HINDI_TRANSLATION_UNAVAILABLE",
+            503,
+          );
+        }
+        this.insertGuidance(
+          versionId,
+          row.guidanceKey,
+          row.stepId,
+          "hi-IN",
+          hindi,
+          true,
+          "automatic-hindi-v1",
+        );
+      }
+    })();
   }
 
   async getRecipe(actor: HouseholdActor, versionId: string): Promise<HomeownerRecipeView> {
@@ -840,6 +909,7 @@ export class HomeownerStore {
         "CORE_LISTS_REQUIRED",
       );
     }
+    await this.generateMissingHindiGuidance(versionId);
     const requiredGuidanceCount = 1 + row.ingredientCount + row.stepCount;
     const guidanceByLocale = this.client.prepare(
       `SELECT locale, COUNT(DISTINCT guidance_key) AS guidanceCount
@@ -853,8 +923,8 @@ export class HomeownerStore {
       || guidanceCounts.get("hi-IN") !== requiredGuidanceCount
     ) {
       throw new HomeownerValidationError(
-        "Review exact English and Hindi speech for the dish, every ingredient, and every cooking step before publishing.",
-        "BILINGUAL_GUIDANCE_REQUIRED",
+        "Add reviewed English speech for the dish, every ingredient, and every cooking step before publishing.",
+        "ENGLISH_GUIDANCE_REQUIRED",
       );
     }
     const now = new Date().toISOString();
@@ -896,6 +966,7 @@ export class HomeownerStore {
     targetServings: number,
     selectedLocale: HousehelpLocale,
     notes: Record<HousehelpLocale, string>,
+    hindiNoteGenerated: boolean,
   ): AssignmentSnapshot {
     const recipe = this.client.prepare(
       `SELECT v.recipe_id AS recipeId, s.attribution
@@ -919,13 +990,15 @@ export class HomeownerStore {
        FROM recipe_steps WHERE recipe_version_id = ? ORDER BY sort_order`,
     ).all(recipeVersionId) as Array<{ id: string; durationSeconds: number | null }>;
     const guidanceRows = this.client.prepare(
-      `SELECT guidance_key AS guidanceKey, locale, speakable_text AS speakableText
+      `SELECT guidance_key AS guidanceKey, locale, speakable_text AS speakableText,
+              voice_version AS voiceVersion
        FROM spoken_guidance
        WHERE recipe_version_id = ? AND review_status = 'reviewed'`,
     ).all(recipeVersionId) as Array<{
       guidanceKey: string;
       locale: HousehelpLocale;
       speakableText: string;
+      voiceVersion: string;
     }>;
     const guidance = new Map(
       guidanceRows.map((row) => [`${row.guidanceKey}:${row.locale}`, row.speakableText]),
@@ -970,6 +1043,9 @@ export class HomeownerStore {
       })),
     });
 
+    const hindiWasGenerated = hindiNoteGenerated || guidanceRows.some(
+      (row) => row.locale === "hi-IN" && row.voiceVersion === "automatic-hindi-v1",
+    );
     return {
       schemaVersion: 1,
       assignment: {
@@ -981,7 +1057,10 @@ export class HomeownerStore {
         targetTime: targetTime ?? "",
         servings: targetServings,
         selectedLocale,
-        translationStatus: { "en-IN": "reviewed", "hi-IN": "reviewed" },
+        translationStatus: {
+          "en-IN": "reviewed",
+          "hi-IN": hindiWasGenerated ? "auto_translated" : "reviewed",
+        },
       },
       recipe: {
         id: recipe.recipeId,
@@ -1039,14 +1118,14 @@ export class HomeownerStore {
     const parsed = AssignmentInputSchema.parse(input);
     if ((parsed.notesEnglish || parsed.notesHindi) && !parsed.noteReviewConfirmed) {
       throw new HomeownerValidationError(
-        "Confirm that the homeowner note was reviewed in both spoken languages, or leave both notes blank.",
+        "Confirm that the homeowner note was reviewed, or leave it blank.",
         "NOTE_REVIEW_REQUIRED",
       );
     }
-    if (Boolean(parsed.notesEnglish) !== Boolean(parsed.notesHindi)) {
+    if (parsed.notesHindi && !parsed.notesEnglish) {
       throw new HomeownerValidationError(
-        "Add reviewed English and Hindi wording for the homeowner note, or leave both blank.",
-        "BILINGUAL_NOTE_REQUIRED",
+        "Add the homeowner note in English. Hindi is generated automatically unless you provide an optional override.",
+        "ENGLISH_NOTE_REQUIRED",
       );
     }
     const version = this.client.prepare(
@@ -1088,6 +1167,23 @@ export class HomeownerStore {
         "BILINGUAL_GUIDANCE_REQUIRED",
       );
     }
+    const hindiNoteGenerated = Boolean(parsed.notesEnglish && !parsed.notesHindi);
+    let notesHindi = parsed.notesHindi ?? "";
+    if (parsed.notesEnglish && !notesHindi) {
+      const translations = await this.translateToHindi([{
+        key: "assignment.note",
+        english: parsed.notesEnglish,
+        maxLength: 1_000,
+      }]);
+      notesHindi = translations.get("assignment.note") ?? "";
+      if (!notesHindi) {
+        throw new HomeownerValidationError(
+          "Automatic Hindi translation did not return the homeowner note. Try again.",
+          "HINDI_TRANSLATION_UNAVAILABLE",
+          503,
+        );
+      }
+    }
     const id = randomUUID();
     const now = new Date().toISOString();
     this.client.transaction(() => {
@@ -1107,7 +1203,7 @@ export class HomeownerStore {
         parsed.targetTime || null,
         parsed.targetServings,
         parsed.selectedLocale,
-        parsed.selectedLocale === "hi-IN" ? parsed.notesHindi : parsed.notesEnglish,
+        parsed.selectedLocale === "hi-IN" ? notesHindi : parsed.notesEnglish,
         now,
         now,
       );
@@ -1125,7 +1221,8 @@ export class HomeownerStore {
           parsed.targetTime || null,
           parsed.targetServings,
           locale,
-          { "en-IN": parsed.notesEnglish ?? "", "hi-IN": parsed.notesHindi ?? "" },
+          { "en-IN": parsed.notesEnglish ?? "", "hi-IN": notesHindi },
+          hindiNoteGenerated,
         );
         insertSnapshot.run(id, parsed.recipeVersionId, locale, JSON.stringify(snapshot), now, now);
       }

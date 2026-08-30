@@ -120,11 +120,10 @@ export function ReviewForm({ recipe }: { recipe: HomeownerRecipeView }) {
   }
 
   const hasCoreLists = ingredients.length > 0 && steps.length > 0;
-  const hasBilingualGuidance = Boolean(
+  const hasEnglishGuidance = Boolean(
     spokenDishEnglish.trim()
-    && spokenDishHindi.trim()
-    && ingredients.every((ingredient) => ingredient.spokenEnglish.trim() && ingredient.spokenHindi.trim())
-    && steps.every((step) => step.spokenEnglish.trim() && step.spokenHindi.trim()),
+    && ingredients.every((ingredient) => ingredient.spokenEnglish.trim())
+    && steps.every((step) => step.spokenEnglish.trim()),
   );
 
   return (
@@ -157,10 +156,10 @@ export function ReviewForm({ recipe }: { recipe: HomeownerRecipeView }) {
           </div>
           <div className={styles.spokenCard}>
             <div className={styles.spokenHeader}>
-              <label htmlFor="dish-hindi">Exact Hindi dish speech</label>
+              <label htmlFor="dish-hindi">Hindi dish speech (optional override)</label>
               <button className={styles.previewButton} type="button" onClick={() => speakPreview(spokenDishHindi, "hi-IN")} disabled={!spokenDishHindi.trim()}>Hear Hindi</button>
             </div>
-            <input id="dish-hindi" lang="hi" value={spokenDishHindi} onChange={(event) => setSpokenDishHindi(event.target.value)} placeholder="Reviewed Hindi dish name" required />
+            <input id="dish-hindi" lang="hi" value={spokenDishHindi} onChange={(event) => setSpokenDishHindi(event.target.value)} placeholder="Generated automatically from English when published" />
           </div>
         </div>
       </section>
@@ -232,10 +231,10 @@ export function ReviewForm({ recipe }: { recipe: HomeownerRecipeView }) {
                 </div>
                 <div className={styles.spokenCard}>
                   <div className={styles.spokenHeader}>
-                    <label htmlFor={`ingredient-hindi-${index}`}>Exact Hindi speech</label>
+                    <label htmlFor={`ingredient-hindi-${index}`}>Hindi speech (optional override)</label>
                     <button className={styles.previewButton} type="button" onClick={() => speakPreview(ingredient.spokenHindi, "hi-IN")} disabled={!ingredient.spokenHindi.trim()}>Hear Hindi</button>
                   </div>
-                  <textarea id={`ingredient-hindi-${index}`} lang="hi" value={ingredient.spokenHindi} onChange={(event) => changeIngredient(index, { spokenHindi: event.target.value })} rows={2} placeholder="Reviewed Hindi ingredient wording" required />
+                  <textarea id={`ingredient-hindi-${index}`} lang="hi" value={ingredient.spokenHindi} onChange={(event) => changeIngredient(index, { spokenHindi: event.target.value })} rows={2} placeholder="Generated automatically from English when published" />
                 </div>
               </div>
               <div className={styles.editorMeta}>
@@ -315,11 +314,11 @@ export function ReviewForm({ recipe }: { recipe: HomeownerRecipeView }) {
                 </div>
                 <div className={styles.spokenCard}>
                   <div className={styles.spokenHeader}>
-                    <label htmlFor={`step-hindi-${index}`}>Exact Hindi speech</label>
+                    <label htmlFor={`step-hindi-${index}`}>Hindi speech (optional override)</label>
                     <button className={styles.previewButton} type="button" onClick={() => speakPreview(step.spokenHindi, "hi-IN")} disabled={!step.spokenHindi.trim()}>Hear Hindi</button>
                   </div>
-                  <textarea id={`step-hindi-${index}`} lang="hi" value={step.spokenHindi} onChange={(event) => changeStep(index, { spokenHindi: event.target.value })} rows={3} placeholder="Reviewed Hindi guidance" />
-                  <p className={styles.exactPreview}>{step.spokenHindi ? `Will say: “${step.spokenHindi}”` : "Hindi assignments will be marked not ready until this is reviewed."}</p>
+                  <textarea id={`step-hindi-${index}`} lang="hi" value={step.spokenHindi} onChange={(event) => changeStep(index, { spokenHindi: event.target.value })} rows={3} placeholder="Generated automatically from English when published" />
+                  <p className={styles.exactPreview}>{step.spokenHindi ? `Will say: “${step.spokenHindi}”` : "The app will generate this Hindi speech from the English guidance."}</p>
                 </div>
               </div>
               <div className={styles.editorMeta}>
@@ -340,15 +339,15 @@ export function ReviewForm({ recipe }: { recipe: HomeownerRecipeView }) {
         </div>
         <label className={styles.checkRow}>
           <input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
-          <span>I reviewed the ingredients, steps, exact spoken guidance, source evidence, and visual fallbacks.</span>
+          <span>I reviewed the ingredients, steps, English spoken guidance, any Hindi overrides, source evidence, and visual fallbacks.</span>
         </label>
         {!hasCoreLists ? <p className={styles.gateMessage}>Publishing is blocked until both core lists contain at least one item.</p> : null}
-        {hasCoreLists && !hasBilingualGuidance ? <p className={styles.gateMessage}>Publishing is blocked until exact English and Hindi speech is reviewed for the dish, every ingredient, and every step.</p> : null}
+        {hasCoreLists && !hasEnglishGuidance ? <p className={styles.gateMessage}>Publishing is blocked until English speech is reviewed for the dish, every ingredient, and every step. Blank Hindi fields are generated automatically.</p> : null}
         {error ? <p className={styles.errorText} role="alert">{error}</p> : null}
         {message ? <p className={styles.successText} role="status">{message}</p> : null}
         <div className={styles.inlineActions}>
           <button className={styles.secondaryButton} type="submit" disabled={busy !== null}>{busy === "save" ? "Saving…" : "Save draft"}</button>
-          <button className={styles.primaryButton} type="button" onClick={() => void save(true)} disabled={busy !== null || !hasCoreLists || !hasBilingualGuidance || !confirmed}>{busy === "publish" ? "Publishing…" : "Publish reviewed recipe"}</button>
+          <button className={styles.primaryButton} type="button" onClick={() => void save(true)} disabled={busy !== null || !hasCoreLists || !hasEnglishGuidance || !confirmed}>{busy === "publish" ? "Translating and publishing…" : "Publish reviewed recipe"}</button>
         </div>
       </section>
     </form>

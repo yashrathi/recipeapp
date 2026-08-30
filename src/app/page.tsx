@@ -9,7 +9,7 @@ export default function HomePage() {
         <p className="eyebrow">Milestone 1 foundation</p>
         <h1 id="page-title">Household Recipe Assistant</h1>
         <p className="lede">
-          Import or enter a recipe, review exact bilingual cooking guidance, and assign an
+          Import or enter a recipe, review the English cooking guidance and automatic Hindi translation, and assign an
           immutable version to the household cook mode with server-enforced role boundaries.
         </p>
       </section>

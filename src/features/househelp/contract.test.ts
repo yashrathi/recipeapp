@@ -297,6 +297,17 @@ describe("readiness and focal visual resolution", () => {
     }
   });
 
+  it("accepts a complete Hindi snapshot generated before assignment", () => {
+    const candidate = structuredClone(snapshot);
+    candidate.assignment.translationStatus["hi-IN"] = "auto_translated";
+    expect(resolveReadiness({
+      snapshot: candidate,
+      locale: "hi-IN",
+      compatibleDeviceVoice: true,
+      allEssentialAudioCached: false,
+    })).toBe("ready_device_tts");
+  });
+
   it("rejects the prohibited tomato visual and uses one approved fallback", () => {
     const visual = resolveIngredientVisual(snapshot, 1, "en-IN");
     expect(visual.assetId).toBe("state-ingredient-bundled");

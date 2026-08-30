@@ -20,7 +20,7 @@ When implementation is approved, the coordinator creates a dedicated branch and 
 Prerequisites:
 
 - Node.js 24 and npm 11. The exact supported Node range is enforced in `package.json`.
-- No paid service, external account, or API key is required for Milestone 1.
+- No paid service, external account, or API key is required to run the seeded Milestone 1 demo. Publishing a new recipe with blank Hindi fields requires the configured server-side translation provider.
 
 From the repository root:
 
@@ -31,7 +31,7 @@ npm run db:setup
 npm run dev
 ```
 
-Open `http://localhost:3000`. The development-only role switcher creates a signed HTTP-only demo session for either seeded role. The endpoint is always disabled in production. Use the homeowner flow to import/manual-enter, review bilingual guidance, publish, and assign; use the househelp role to exercise the pinned assignment.
+Open `http://localhost:3000`. The development-only role switcher creates a signed HTTP-only demo session for either seeded role. The endpoint is always disabled in production. Use the homeowner flow to import/manual-enter, review English guidance and any optional Hindi overrides, publish, and assign; use the househelp role to exercise the pinned bilingual assignment.
 
 Environment values:
 
@@ -40,11 +40,12 @@ Environment values:
 - `FIRECRAWL_API_KEY`: optional server-only key used after an eligible public webpage passes URL safety checks but direct fetching or deterministic extraction cannot produce a usable page.
 - `FIRECRAWL_API_URL`: Firecrawl scrape endpoint, default `https://api.firecrawl.dev/v2/scrape`; keep the default outside controlled adapter tests.
 - `FIRECRAWL_ZERO_DATA_RETENTION`: optional `true`/`false`, default `false`. Set `true` only when Zero Data Retention is enabled for the Firecrawl account; standard paid plans can reject the flag with `403`.
-- `OPENAI_API_KEY`: optional server-only key for evidence-checked extraction from unstructured Firecrawl markdown and public YouTube transcripts. Never use a `NEXT_PUBLIC_` prefix.
-- `OPENAI_RECIPE_MODEL`: required with `OPENAI_API_KEY`; choose an available Responses API model that supports strict JSON Schema structured outputs. Model usage incurs provider cost.
+- `OPENAI_API_KEY`: optional server-only key for evidence-checked extraction from unstructured Firecrawl markdown/public YouTube transcripts and automatic Hindi translation. It is required when publishing or assigning content with blank Hindi fields. Never use a `NEXT_PUBLIC_` prefix.
+- `OPENAI_RECIPE_MODEL`: required with `OPENAI_API_KEY` for recipe extraction; it is also the Hindi translation fallback model. Choose an available Responses API model that supports strict JSON Schema structured outputs. Model usage incurs provider cost.
+- `OPENAI_TRANSLATION_MODEL`: optional dedicated model for English-to-Hindi recipe guidance; falls back to `OPENAI_RECIPE_MODEL` when blank.
 - `OPENAI_API_URL`: Responses endpoint, default `https://api.openai.com/v1/responses`; keep the default outside controlled adapter tests.
 
-The synchronous OpenAI extraction timeout is 60 seconds. A representative live YouTube transcript import measured about 52 seconds end to end, so deployment request limits must exceed the complete Firecrawl-plus-OpenAI path with operational headroom. Hosts with shorter function/request ceilings can terminate otherwise successful imports; moving long-running imports to a queue would require a separately approved architecture slice and is not implemented here.
+The synchronous OpenAI extraction timeout is 60 seconds and the automatic Hindi translation timeout is 30 seconds. A representative live YouTube transcript import measured about 52 seconds end to end, so deployment request limits must exceed the complete Firecrawl-plus-OpenAI path with operational headroom. Hosts with shorter function/request ceilings can terminate otherwise successful imports; moving long-running imports to a queue would require a separately approved architecture slice and is not implemented here.
 
 Do not commit `.env.local`, database files, or real secrets. The committed `.env.example` contains placeholders only.
 
@@ -74,7 +75,7 @@ npm run test:e2e
 
 The E2E runner initializes deterministic data in a dedicated per-run `.data/playwright-<pid>.sqlite` database and starts its own development server on port `3100` by default. It never reuses the normal port-3000 server or database. Stop any active `next dev` process before starting the browser suite because Next.js permits only one development process per build directory. It intentionally uses one worker because the desktop and mobile projects share the isolated fixture. Set `PORT` or `PLAYWRIGHT_DATABASE_PATH` only when a controlled test environment requires an override. Two desktop cases are skipped because their cook-mode acceptance is deliberately phone-only. HTML reports are written to the ignored `playwright-report/` directory.
 
-Current verified baseline: 18 test files / 187 Vitest tests, a warning-free production build, and 10 passing Playwright cases across desktop/mobile with 2 intentional desktop skips.
+Current verified baseline on `feature/automatic-hindi-translation`: 19 test files / 192 Vitest tests, a warning-free production build, and 10 passing Playwright cases across desktop/mobile with 2 intentional desktop skips.
 
 ## Runtime checks
 
@@ -84,6 +85,7 @@ Current verified baseline: 18 test files / 187 Vitest tests, a warning-free prod
 - If webpage or YouTube import fails, read the surfaced warning and use manual entry. The importer rejects private/loopback destinations, redirects outside policy, oversized/slow responses, unsupported media, and sources without trustworthy recipe evidence. When configured, Firecrawl is attempted only after the original URL passes the same public-address policy and direct retrieval or extraction cannot produce a usable recipe. Firecrawl caching is always disabled with `storeInCache:false`; standard accounts remain subject to Firecrawl's provider retention policy. ZDR-capable accounts may explicitly enable `FIRECRAWL_ZERO_DATA_RETENTION=true`. The app never silently retries without ZDR after a rejected ZDR request. Returned URLs and bounded content are revalidated before extraction. Allrecipes and other blocking/unsupported sources may still require manual entry.
 - YouTube watch, share, and Shorts links use Firecrawl's transcript markdown and do not need a YouTube Data API key. Missing captions/transcripts fail safely to manual entry. The app does not use Pick-a-Recipe code, `yt-dlp`, browser cookies, or downloaded/cached audio or video.
 - AI extraction makes one bounded Responses API call with `store: false`. The submitted bounded source text still crosses the OpenAI provider boundary and is subject to the deployment's OpenAI data controls and retention terms; `store: false` is not a zero-retention claim. Persisted jobs retain only the reviewed draft and bounded evidence excerpts, never the full page/transcript or raw provider errors.
+- Automatic Hindi translation sends only the missing reviewed English speech fields (or English assignment note) in a bounded, structured Responses API call with `store: false`. Existing Hindi overrides skip translation. A missing key, duplicate key, oversized response, timeout, or unavailable configuration leaves publication/assignment safely incomplete and surfaces a retryable error.
 - If househelp audio is unavailable, use the on-screen audio recovery action and device settings. The local progress queue retries connectivity failures but deliberately retains rejected mutations for safe recovery instead of silently discarding them.
 - If production startup reports `SESSION_SECRET is required in production`, provide a secret through the hosting platform's secret manager; do not add a fallback to source control.
 

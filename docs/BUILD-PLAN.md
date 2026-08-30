@@ -4,6 +4,20 @@ Status: Milestones 1 and 2 are integrated and independently verified locally on 
 
 The sequence uses complete vertical slices. Later milestones may change after user research and integration discovery.
 
+## Approved maintenance: English-first authoring and automatic Hindi
+
+Status: implemented and verified on isolated branch `feature/automatic-hindi-translation`; pending explicit integration authorization.
+
+Goal: remove manual Hindi as a homeowner prerequisite while preserving complete, immutable English/Hindi cook guidance.
+
+Acceptance gates:
+
+- Dish, ingredient, step, and assignment-note Hindi fields are optional overrides and have no browser or server-side required-input gate.
+- Publishing with complete reviewed English guidance generates every missing Hindi recipe field server-side before the version is finalized.
+- Assigning with an English homeowner note generates its missing Hindi counterpart before both snapshots are atomically pinned.
+- Existing Hindi overrides are preserved, incomplete provider output fails safely, and househelp still receives complete English/Hindi snapshots.
+- Translation calls are server-only, bounded, mock-tested, use structured output with `store: false`, and fail clearly when not configured.
+
 ## Milestone 1: Webpage recipe to assigned cook mode
 
 Goal: prove the core household loop with one public recipe webpage, homeowner review, assignment, and househelp execution.

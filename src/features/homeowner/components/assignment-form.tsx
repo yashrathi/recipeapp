@@ -60,7 +60,7 @@ export function AssignmentForm({
         <p className={styles.eyebrow}>Assignment created</p>
         <h2 id="assignment-created-heading">{title} is on the household plan</h2>
         <p>{result.guidanceReady
-          ? "The selected spoken guidance is reviewed and ready for the househelp flow."
+          ? "The selected spoken guidance is complete and ready for the househelp flow."
           : "The assignment is saved, but its selected-language audio readiness still needs attention before cooking."}</p>
         <Link className={styles.primaryLink} href="/homeowner">Return to Today</Link>
       </section>
@@ -112,14 +112,14 @@ export function AssignmentForm({
           <textarea id="assignment-note-english" name="notesEnglish" rows={3} maxLength={1000} placeholder="For example: use less chilli" />
         </div>
         <div className={styles.fieldGroup}>
-          <label htmlFor="assignment-note-hindi">Exact Hindi homeowner note</label>
-          <textarea id="assignment-note-hindi" name="notesHindi" lang="hi" rows={3} maxLength={1000} placeholder="उदाहरण: मिर्च कम डालें" />
+          <label htmlFor="assignment-note-hindi">Hindi homeowner note (optional override)</label>
+          <textarea id="assignment-note-hindi" name="notesHindi" lang="hi" rows={3} maxLength={1000} placeholder="Generated automatically from the English note" />
         </div>
-        <p className={styles.fieldHint}>Add both reviewed versions so switching language never changes the note’s meaning, or leave both blank.</p>
+        <p className={styles.fieldHint}>Write the note in English. The app generates Hindi automatically unless you add an optional Hindi override.</p>
       </div>
       <label className={styles.checkRow}>
         <input type="checkbox" name="noteReviewConfirmed" />
-        <span>If I added a note, I reviewed its exact English and Hindi wording.</span>
+        <span>If I added a note, I reviewed its English wording and any Hindi override.</span>
       </label>
       {error ? <p className={styles.errorText} role="alert">{error}</p> : null}
       <button className={styles.primaryButton} type="submit" disabled={busy || househelp.length === 0}>

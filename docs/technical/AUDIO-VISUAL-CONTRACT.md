@@ -208,16 +208,16 @@ The canonical acceptance paths are in `interaction-cases.json`. The following ta
 
 ## 6. Locales and message formatting
 
-Milestone 1 locale identifiers are `en-IN` and `hi-IN`. Locale JSON files contain an identical set of message IDs. Tests must fail on a missing/extra ID, unresolved placeholder, empty accessible name, or dynamic recipe text that lacks reviewed content in the chosen locale.
+Milestone 1 locale identifiers are `en-IN` and `hi-IN`. Locale JSON files contain an identical set of message IDs. Tests must fail on a missing/extra ID, unresolved placeholder, empty accessible name, or dynamic recipe text that lacks eligible content in the chosen locale. Eligible content is homeowner-reviewed English, a Hindi override, or a complete server-generated Hindi translation created before publication/assignment.
 
 Use ICU MessageFormat semantics for plural/select values in production. Fixtures use named `{placeholders}` so they remain framework-neutral. Do not concatenate translated sentence fragments in UI code. It is acceptable to serialize a response as multiple complete message segments so long as they play as one cancellable sequence.
 
 ### Dynamic content boundary
 
 - Interface phrases and unit terms: locale JSON.
-- Dish/ingredient/step/homeowner note: the assignment's reviewed `RecipeTranslation` snapshot.
-- Missing recipe translation: assignment is `not_ready`; never improvise machine translation during cooking.
-- Homeowner notes must be previewed in the selected locale or explicitly omitted. Do not read untranslated private text with a wrong-locale voice.
+- Dish/ingredient/step/homeowner note: the assignment's immutable `RecipeTranslation` snapshot. Snapshot status distinguishes `reviewed` wording from `auto_translated` Hindi.
+- Missing recipe translation: assignment is `not_ready`; never improvise machine translation during cooking. Automatic Hindi must be generated and pinned before cooking.
+- Homeowner notes are entered in English and translated before snapshot creation unless omitted; a Hindi override remains optional. Do not read untranslated private text with a wrong-locale voice.
 
 ### Quantity speech
 

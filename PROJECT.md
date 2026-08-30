@@ -6,7 +6,7 @@ A two-role web app that turns a public recipe webpage or YouTube cooking video i
 
 ## Implementation status
 
-Milestone 1 is implemented and verified locally. It covers public webpage import plus manual fallback, homeowner review and bilingual publication, immutable assignment snapshots, and an English/Hindi audio-first househelp cook flow. YouTube import, shopping-list preparation, provider handoff, production identity, and production hosting remain later milestones.
+Milestone 1 is implemented and verified locally. It covers public webpage import plus manual fallback, English-first homeowner review with automatic Hindi translation, immutable bilingual assignment snapshots, and an English/Hindi audio-first househelp cook flow. YouTube import, shopping-list preparation, provider handoff, production identity, and production hosting remain later milestones.
 
 ## Users
 

@@ -279,6 +279,7 @@ Shopping list: `draft → reviewed → handed_off → confirmed`, with `failed` 
 
 - Mobile-first responsive web app, not separate native apps.
 - Human-reviewed draft required before assignment.
+- Homeowner recipe and note input is English-first. The app generates missing Hindi speech before publication or assignment; Hindi text remains an optional override rather than a required field.
 - One homeowner and one househelp supported first, with a data model that allows more members.
 - Meal-slot scheduling (`breakfast`, `lunch`, `snack`, `dinner`) plus an optional target time.
 - Audio-first househelp flow is required in the first usable slice; no core task may require reading.

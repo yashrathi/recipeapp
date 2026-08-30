@@ -32,7 +32,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ v
         <section className={styles.panel} aria-labelledby="published-steps-heading">
           <p className={styles.eyebrow}>{recipe.steps.length} ordered actions</p>
           <h2 id="published-steps-heading">Cooking steps</h2>
-          <ol className={styles.stepList}>{recipe.steps.map((step) => <li key={step.id}><strong>{step.shortText}</strong><span>{step.detailedText}</span><small>English speech: “{step.spokenEnglish}”</small>{step.spokenHindi ? <small lang="hi">Hindi speech: “{step.spokenHindi}”</small> : <small>Hindi speech needs review</small>}</li>)}</ol>
+          <ol className={styles.stepList}>{recipe.steps.map((step) => <li key={step.id}><strong>{step.shortText}</strong><span>{step.detailedText}</span><small>English speech: “{step.spokenEnglish}”</small>{step.spokenHindi ? <small lang="hi">Hindi speech: “{step.spokenHindi}”</small> : <small>Hindi speech will be generated when published</small>}</li>)}</ol>
         </section>
       </div>
     </>

@@ -8,6 +8,7 @@ import { runMigrations } from "@/server/db/migrate";
 import { DEMO_IDS, seedDemoData } from "@/server/db/seed";
 import { HomeownerStore } from "@/features/homeowner/server/store";
 import { HousehelpRepository } from "@/features/househelp/server/repository";
+import type { HindiTranslator } from "@/server/translation/hindi";
 
 const HASH = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const homeowner: HouseholdActor = {
@@ -21,6 +22,21 @@ const househelp: HouseholdActor = {
   householdId: DEMO_IDS.household,
   membershipId: DEMO_IDS.househelpMembership,
   role: "househelp",
+};
+
+const hindiByEnglish = new Map([
+  ["Confirmed rice", "पक्का चावल"],
+  ["1 cup rice", "एक कप चावल"],
+  ["Cook the rice", "चावल पकाएँ।"],
+  ["Use less chilli", "मिर्च कम डालें"],
+]);
+const hindiTranslator: HindiTranslator = {
+  async translate(items) {
+    return items.map((item) => ({
+      key: item.key,
+      hindi: hindiByEnglish.get(item.english) ?? `हिन्दी: ${item.english}`,
+    }));
+  },
 };
 
 const partialImport = {
@@ -76,7 +92,7 @@ describe("homeowner recipe service", () => {
     client = handle.client;
     runMigrations(client);
     seedDemoData(client);
-    store = new HomeownerStore(handle);
+    store = new HomeownerStore(handle, hindiTranslator);
   });
 
   afterEach(() => client.close());
@@ -124,7 +140,7 @@ describe("homeowner recipe service", () => {
     await expect(store.publishDraft(homeowner, versionId, false)).rejects.toMatchObject({ code: "REVIEW_CONFIRMATION_REQUIRED" });
   });
 
-  it("blocks publication until all bilingual speech is reviewed", async () => {
+  it("publishes from English-only input by generating every missing Hindi field", async () => {
     const versionId = await store.createManualDraft(homeowner, {
       title: "Confirmed rice",
       servings: 2,
@@ -144,8 +160,12 @@ describe("homeowner recipe service", () => {
       })),
       steps: draft.steps,
     });
-    await expect(store.publishDraft(homeowner, versionId, true)).rejects.toMatchObject({
-      code: "BILINGUAL_GUIDANCE_REQUIRED",
+    await store.publishDraft(homeowner, versionId, true);
+    await expect(store.getRecipe(homeowner, versionId)).resolves.toMatchObject({
+      reviewStatus: "published",
+      spokenDishHindi: "पक्का चावल",
+      ingredients: [{ spokenHindi: "एक कप चावल" }],
+      steps: [{ spokenHindi: "चावल पकाएँ।" }],
     });
   });
 
@@ -189,7 +209,7 @@ describe("homeowner recipe service", () => {
       targetServings: 3,
       selectedLocale: "hi-IN",
       notesEnglish: "Use less chilli",
-      notesHindi: "मिर्च कम डालें",
+      notesHindi: null,
       noteReviewConfirmed: true,
     });
     expect(assignment.guidanceReady).toBe(true);
@@ -199,7 +219,11 @@ describe("homeowner recipe service", () => {
     ).get(assignment.id)).toEqual({ count: 2 });
     const househelpView = new HousehelpRepository(client).getVisible(househelp, assignment.id);
     expect(househelpView?.snapshot).toMatchObject({
-      assignment: { id: assignment.id, recipeVersionId: versionId },
+      assignment: {
+        id: assignment.id,
+        recipeVersionId: versionId,
+        translationStatus: { "hi-IN": "auto_translated" },
+      },
       translations: {
         "en-IN": { dish: "spinach", note: "Use less chilli" },
         "hi-IN": { dish: "पालक", note: "मिर्च कम डालें" },

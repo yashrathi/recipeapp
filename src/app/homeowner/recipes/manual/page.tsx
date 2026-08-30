@@ -12,7 +12,7 @@ export default async function ManualRecipePage() {
       <header className={styles.pageHeader}>
         <p className={styles.eyebrow}>Manual fallback</p>
         <h1>Start with what you trust</h1>
-        <p>Create a review draft from your own ingredient lines and ordered steps. Spoken Hindi can be added during review.</p>
+        <p>Create a review draft from your own English ingredient lines and ordered steps. The app generates Hindi when you publish.</p>
       </header>
       <ManualRecipeForm />
     </div>

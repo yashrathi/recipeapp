@@ -87,6 +87,7 @@ Househelp screens use one focal visual at a time. Audio remains authoritative; t
 - Speak quantities naturally in the selected language; do not read database abbreviations such as `tbsp` verbatim.
 - Pause or duck speech when a timer alarm plays. Never overlap two spoken messages.
 - The homeowner can preview the exact spoken guidance before assigning a recipe.
+- Homeowner authoring is English-first. Hindi recipe guidance and notes are generated from English; Hindi fields are optional overrides, never required inputs.
 - Store canonical recipe content separately from translations.
 - Spoken guidance and interface phrases are versioned by language. A reviewed source version remains the authority.
 - Language is chosen during setup with spoken samples and can be changed from every househelp screen without entering settings.
