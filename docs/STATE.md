@@ -4,7 +4,7 @@ Updated: 2026-08-30
 
 ## Current milestone
 
-Milestones 1 and 2, English-first automatic Hindi, the househelp cooking-menu/one-time-language repair, speech-failure navigation fixes, and uncapped homeowner-authored text are integrated, verified, pushed, and deployed as a public preview.
+Milestones 1 and 2, English-first automatic Hindi, the househelp cooking-menu/one-time-language repair, speech-failure navigation fixes, uncapped homeowner-authored text, and the shared Instamart-priced shopping list are integrated, verified, pushed, and deployed as a public preview.
 
 ## Integrated task branches and worktrees
 
@@ -29,6 +29,7 @@ All accepted Milestone 1, Milestone 2, automatic-Hindi, househelp-flow, speech-f
 - Failed activation speech no longer traps `Resume` or `Cook now`; navigation continues unless speech was deliberately dropped as stale.
 - Spoken-language confirmation occurs once per device. The selected locale is reused when entering a task, resuming after reload, and returning after completion; language selection reappears only through the explicit change control.
 - Visuals are deliberately light: bundled focal state/action illustrations have accessible equivalents, while spoken guidance remains authoritative.
+- A homeowner can maintain one persistent household shopping list, remove items, choose a saved Swiggy address, and save the first available ranked Instamart price snapshot. Househelp can read and hear the same list in English or Hindi but cannot mutate it. Cart and checkout operations are not implemented.
 - Combined verification passes lint, strict TypeScript, 22 files / 220 tests, and the production build. Playwright passes 17 desktop/mobile cases with 5 intentional skips, including uncapped publish/assignment text, speech-failure navigation, automatic Hindi, menu browsing, assignment-free cooking, role denials, active-task escape, stalled completion speech, and offline progress behavior.
 - The exact Pinch-of-Yum page succeeds through both repaired direct fetch and forced Firecrawl fallback with deterministic extraction (12 ingredients, 7 steps). A live captioned YouTube recipe succeeds through Firecrawl transcript retrieval and OpenAI evidence extraction as `partial_success` (3 evidenced ingredients, 12 steps, language recorded, no timestamps fabricated). Credentials and raw source/transcript text were not printed or persisted by the smoke harness.
 - The private GitHub repository is `https://github.com/yashrathi/recipeapp.git` with default branch `main`; combined application release `a80e6d8` is pushed and deployed at `https://ghormai.everythingweb.in` from `/opt/ghormai/releases/a80e6d83939f` on the Linode target.
@@ -37,7 +38,7 @@ All accepted Milestone 1, Milestone 2, automatic-Hindi, househelp-flow, speech-f
 
 - No Milestone 2 implementation or live-provider blocker remains.
 - The Linode deployment is a protected public preview with seeded demo roles and a persistent SQLite file, not an approved production identity/datastore architecture.
-- Official Swiggy or alternative grocery-provider API/partnership capability remains unverified and out of scope.
+- The official Swiggy MCP read-only address and Instamart catalog search path is verified; cart, checkout, ordering, delivery, and long-term partner availability remain unverified and out of scope.
 
 ## Risks
 

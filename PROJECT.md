@@ -6,7 +6,7 @@ A two-role web app that turns a public recipe webpage or YouTube cooking video i
 
 ## Implementation status
 
-Milestone 1 is implemented and verified locally. It covers public webpage import plus manual fallback, English-first homeowner review with automatic Hindi translation, immutable bilingual assignment snapshots, and an English/Hindi audio-first househelp cook flow. YouTube import, shopping-list preparation, provider handoff, production identity, and production hosting remain later milestones.
+The current protected preview covers public webpage and YouTube import plus manual fallback, English-first homeowner review with automatic Hindi translation, immutable bilingual assignment snapshots, an English/Hindi audio-first househelp cook flow, and a shared household shopping list with read-only Instamart price snapshots. Cart/checkout handoff and production identity remain later milestones.
 
 ## Users
 
@@ -42,11 +42,11 @@ From a public recipe link, a homeowner can produce a trustworthy, assigned cooki
 
 Included in the broader proposed first release roadmap:
 
-- Public recipe webpage import; public YouTube URL import is the next proposed milestone.
+- Public recipe webpage and YouTube URL import.
 - Extraction into title, servings, time, ingredients, and steps.
 - Homeowner review/edit/publish.
 - Seeded household membership, assignment, schedule, ingredient checklist, and cook mode are in Milestone 1.
-- Shopping-list preparation and a provider-neutral order handoff remain proposed later milestones.
+- Shared homeowner/househelp shopping-list preparation and read-only Instamart price snapshots are implemented; provider-neutral cart or order handoff remains proposed later scope.
 
 Not assumed for the first release:
 
