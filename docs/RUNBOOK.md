@@ -75,7 +75,7 @@ npm run test:e2e
 
 The E2E runner initializes deterministic data in a dedicated per-run `.data/playwright-<pid>.sqlite` database and starts its own development server on port `3100` by default. It never reuses the normal port-3000 server or database. Stop any active `next dev` process before starting the browser suite because Next.js permits only one development process per build directory. It intentionally uses one worker because the desktop and mobile projects share the isolated fixture. Set `PORT` or `PLAYWRIGHT_DATABASE_PATH` only when a controlled test environment requires an override. Four desktop cases are skipped because their cook-mode acceptance is deliberately phone-only. HTML reports are written to the ignored `playwright-report/` directory.
 
-Current combined static baseline: 19 test files / 199 Vitest tests, lint, strict TypeScript, and a warning-free production build pass. The full combined Playwright rerun remains pending because a running development server currently owns this checkout's `.next` directory; do not kill a user's server solely to run acceptance. Before deployment, stop that server normally and run `npm run test:e2e` to confirm the integrated browser baseline.
+Current integrated baseline: 19 test files / 199 Vitest tests, lint, strict TypeScript, a warning-free production build, and 14 passing Playwright cases across desktop/mobile with 4 intentional desktop skips. When a development server owns the coordinator checkout's `.next` directory, preserve it and run browser acceptance from a detached worktree on an unused port with an isolated database.
 
 ## Runtime checks
 
