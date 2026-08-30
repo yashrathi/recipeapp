@@ -1,1 +1,26 @@
+# dependencies
+/node_modules
+
+# Next.js output
+/.next
+/out
+
+# local data and runtime files
+/.data
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# local environment files (the example is committed)
+.env*
+!.env.example
+
+# test output
+/coverage
+/playwright-report
+/test-results
+
+# tooling and OS files
+*.tsbuildinfo
 .DS_Store
+npm-debug.log*
