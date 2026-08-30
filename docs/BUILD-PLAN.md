@@ -37,7 +37,7 @@ Acceptance achieved locally:
 
 ## Milestone 2: Broad-source recipe import
 
-Status: approved; implementation is active on an isolated worker branch.
+Status: implemented and verified on isolated branch `feature/broad-source-import`; integration into `main` awaits explicit authorization.
 
 Goal: make the existing reviewed import workflow work across more public recipe webpages and public YouTube videos without inventing recipe content.
 
