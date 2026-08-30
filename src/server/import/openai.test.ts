@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { OpenAIRecipeExtractor } from "@/server/import/openai";
+import { OPENAI_LIMITS, OpenAIRecipeExtractor } from "@/server/import/openai";
 import type { SourceLine } from "@/server/import/transcript";
 
 const lines: SourceLine[] = [
@@ -24,6 +24,10 @@ function response(output: unknown, status = 200): Response {
 }
 
 describe("OpenAI recipe adapter", () => {
+  it("allows the measured synchronous extraction window by default", () => {
+    expect(OPENAI_LIMITS.timeoutMs).toBe(60_000);
+  });
+
   it("uses one non-stored structured Responses request and verifies exact evidence", async () => {
     let body: Record<string, unknown> | null = null;
     let calls = 0;

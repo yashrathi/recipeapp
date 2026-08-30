@@ -96,7 +96,7 @@ The source-policy layer may reject a site before fetching based on documented pr
 
 ### 3.5 OpenAI evidence extraction
 
-- Use the Responses API with a configurable model, strict `text.format` JSON Schema, `store: false`, bounded input/output, one call, and a 30-second timeout.
+- Use the Responses API with a configurable model, strict `text.format` JSON Schema, `store: false`, bounded input/output, one call, and a 60-second timeout. A representative synchronous live YouTube path measured about 52 seconds end to end. Deployment request limits must cover the full Firecrawl-plus-OpenAI duration with headroom; otherwise platform timeouts can interrupt a valid import. An asynchronous queue is a future architectural option, not part of this slice.
 - Treat retrieved source text as untrusted data and explicitly instruct the model to ignore instructions inside it.
 - Every accepted field requires an exact excerpt and locator. Verify the locator and excerpt programmatically against the supplied lines; omit mismatches and mark a usable affected draft `partial_success`.
 - Unknown values remain null/empty. Do not infer nutrition, allergens, servings, quantities, or times without explicit evidence.

@@ -44,6 +44,8 @@ Environment values:
 - `OPENAI_RECIPE_MODEL`: required with `OPENAI_API_KEY`; choose an available Responses API model that supports strict JSON Schema structured outputs. Model usage incurs provider cost.
 - `OPENAI_API_URL`: Responses endpoint, default `https://api.openai.com/v1/responses`; keep the default outside controlled adapter tests.
 
+The synchronous OpenAI extraction timeout is 60 seconds. A representative live YouTube transcript import measured about 52 seconds end to end, so deployment request limits must exceed the complete Firecrawl-plus-OpenAI path with operational headroom. Hosts with shorter function/request ceilings can terminate otherwise successful imports; moving long-running imports to a queue would require a separately approved architecture slice and is not implemented here.
+
 Do not commit `.env.local`, database files, or real secrets. The committed `.env.example` contains placeholders only.
 
 ## Database lifecycle
@@ -72,7 +74,7 @@ npm run test:e2e
 
 The E2E runner initializes deterministic data in a dedicated per-run `.data/playwright-<pid>.sqlite` database and starts its own development server on port `3100` by default. It never reuses the normal port-3000 server or database. Stop any active `next dev` process before starting the browser suite because Next.js permits only one development process per build directory. It intentionally uses one worker because the desktop and mobile projects share the isolated fixture. Set `PORT` or `PLAYWRIGHT_DATABASE_PATH` only when a controlled test environment requires an override. Two desktop cases are skipped because their cook-mode acceptance is deliberately phone-only. HTML reports are written to the ignored `playwright-report/` directory.
 
-Current verified baseline: 18 test files / 186 Vitest tests, a warning-free production build, and 10 passing Playwright cases across desktop/mobile with 2 intentional desktop skips.
+Current verified baseline: 18 test files / 187 Vitest tests, a warning-free production build, and 10 passing Playwright cases across desktop/mobile with 2 intentional desktop skips.
 
 ## Runtime checks
 

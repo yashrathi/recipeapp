@@ -10,7 +10,7 @@ import { getEnvironment } from "@/server/config/env";
 import type { SourceLine } from "@/server/import/transcript";
 
 export const OPENAI_LIMITS = {
-  timeoutMs: 30_000,
+  timeoutMs: 60_000,
   inputBytes: 256 * 1024,
   responseBytes: 1024 * 1024,
   maxOutputTokens: 6_000,
