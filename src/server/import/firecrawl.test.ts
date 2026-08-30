@@ -42,7 +42,7 @@ describe("Firecrawl scrape adapter", () => {
     expect(second.contentSha256).not.toBe(first.contentSha256);
   });
 
-  it("requests raw HTML and markdown without provider retention or caching", async () => {
+  it("requests raw HTML and markdown without caching and omits ZDR by default", async () => {
     let requestUrl = "";
     let requestInit: RequestInit | undefined;
     const fetcher = new FirecrawlPageFetcher({
@@ -80,7 +80,6 @@ describe("Firecrawl scrape adapter", () => {
       url: "https://pinchofyum.com/fixture-recipe",
       formats: ["rawHtml", "markdown"],
       onlyMainContent: true,
-      zeroDataRetention: true,
       storeInCache: false,
     });
     expect(result).toMatchObject({
@@ -93,6 +92,28 @@ describe("Firecrawl scrape adapter", () => {
         language: "en",
       },
     });
+  });
+
+  it("sends explicit ZDR only when enabled and does not downgrade a rejected request", async () => {
+    let calls = 0;
+    let body: Record<string, unknown> | null = null;
+    const fetcher = new FirecrawlPageFetcher({
+      apiKey: "fixture-key",
+      endpoint: "https://api.firecrawl.test/v2/scrape",
+      resolver: publicResolver,
+      zeroDataRetention: true,
+      transport: async (_url, init) => {
+        calls += 1;
+        body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        return firecrawlResponse({ success: false, error: "ZDR is unavailable on this plan" }, 403);
+      },
+    });
+
+    await expect(fetcher.scrape("https://pinchofyum.com/fixture-recipe")).rejects.toMatchObject({
+      failure: { code: "FIRECRAWL_AUTH_FAILED", retryable: false },
+    });
+    expect(body).toMatchObject({ zeroDataRetention: true, storeInCache: false });
+    expect(calls).toBe(1);
   });
 
   it("fails safely when the provider is not configured", async () => {

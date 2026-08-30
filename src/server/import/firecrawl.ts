@@ -22,6 +22,7 @@ export interface FirecrawlOptions {
   transport?: FetchTransport;
   now?: () => number;
   timeoutMs?: number;
+  zeroDataRetention?: boolean;
 }
 
 interface FirecrawlPayload {
@@ -124,6 +125,7 @@ export class FirecrawlPageFetcher {
   private readonly transport: FetchTransport;
   private readonly now: () => number;
   private readonly timeoutMs: number;
+  private readonly zeroDataRetention: boolean;
 
   constructor(options: FirecrawlOptions = {}) {
     const environment = getEnvironment();
@@ -133,6 +135,7 @@ export class FirecrawlPageFetcher {
     this.transport = options.transport ?? fetch;
     this.now = options.now ?? Date.now;
     this.timeoutMs = options.timeoutMs ?? FIRECRAWL_LIMITS.timeoutMs;
+    this.zeroDataRetention = options.zeroDataRetention ?? environment.FIRECRAWL_ZERO_DATA_RETENTION;
   }
 
   async scrape(requestedUrl: string, cancellation?: AbortSignal): Promise<FirecrawlScrapeResult> {
@@ -168,8 +171,8 @@ export class FirecrawlPageFetcher {
             url: approved.normalizedUrl,
             formats: ["rawHtml", "markdown"],
             onlyMainContent: true,
-            zeroDataRetention: true,
             storeInCache: false,
+            ...(this.zeroDataRetention ? { zeroDataRetention: true } : {}),
           }),
           cache: "no-store",
           signal: controller.signal,

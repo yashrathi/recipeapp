@@ -9,6 +9,17 @@ const EnvironmentSchema = z.object({
     z.string().trim().min(1).optional(),
   ),
   FIRECRAWL_API_URL: z.url().default("https://api.firecrawl.dev/v2/scrape"),
+  FIRECRAWL_ZERO_DATA_RETENTION: z.preprocess(
+    (value) => {
+      if (typeof value !== "string") return value;
+      const normalized = value.trim().toLowerCase();
+      if (!normalized) return undefined;
+      if (normalized === "true") return true;
+      if (normalized === "false") return false;
+      return value;
+    },
+    z.boolean().default(false),
+  ),
   OPENAI_API_KEY: z.preprocess(
     (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
     z.string().trim().min(1).optional(),
