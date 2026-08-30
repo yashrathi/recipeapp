@@ -164,6 +164,26 @@ test("import API failure keeps manual entry available", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Enter manually" }).first()).toBeVisible();
 });
 
+test("an incomplete manual recipe draft can be saved before publishing", async ({ page }) => {
+  await enterHomeowner(page);
+  await page.goto("/homeowner/recipes/manual");
+
+  await page.getByLabel("Recipe title").fill("Weeknight dal");
+  await page.getByLabel("Servings").fill("4");
+  await page.getByLabel(/Ingredients/).fill("1 cup dal\n2 cups water");
+  await page.getByLabel(/Cooking steps/).fill("Rinse the dal\nCook until soft");
+  await page.getByRole("button", { name: "Create review draft" }).click();
+
+  await expect(page).toHaveURL(/\/homeowner\/recipes\/[^/]+\/review$/);
+  await expect(page.getByRole("button", { name: "Publish reviewed recipe" })).toBeDisabled();
+  await page.getByLabel("Recipe title").fill("Weeknight dal updated");
+  await page.getByRole("button", { name: "Save draft" }).click();
+
+  await expect(page.getByRole("status")).toHaveText("Draft saved. It still needs review before assignment.");
+  await page.reload();
+  await expect(page.getByLabel("Recipe title")).toHaveValue("Weeknight dal updated");
+});
+
 test("househelp session cannot open homeowner routes", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Enter househelp shell" }).click();
