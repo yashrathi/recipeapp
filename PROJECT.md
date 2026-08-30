@@ -1,4 +1,4 @@
-# Household Recipe Assistant
+# Ghormai
 
 ## Product brief
 

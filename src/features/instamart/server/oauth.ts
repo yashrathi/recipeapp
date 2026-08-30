@@ -122,7 +122,7 @@ export class SwiggyOAuthService {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/json" },
       body: JSON.stringify({
-        client_name: "Recipe App Instamart price checker",
+        client_name: "Ghormai Instamart price checker",
         redirect_uris: [redirectUri],
         grant_types: ["authorization_code"],
         response_types: ["code"],
@@ -143,4 +143,3 @@ export class SwiggyOAuthService {
     return registration.client_id;
   }
 }
-

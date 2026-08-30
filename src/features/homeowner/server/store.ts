@@ -842,7 +842,7 @@ export class HomeownerStore {
                 purpose: "show_action",
                 verification: "approved",
                 rights: "bundled",
-                attribution: "Recipe App verified action-icon fallback",
+                attribution: "Ghormai verified action-icon fallback",
                 fallback: true,
               },
         };

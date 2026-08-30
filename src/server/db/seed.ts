@@ -112,7 +112,7 @@ export function seedDemoData(client: Database.Database): void {
       "manual",
       null,
       "Simple spinach",
-      "Recipe App demo",
+      "Ghormai demo",
       "Deterministic local demo fixture",
       SEEDED_AT,
     );
@@ -374,7 +374,7 @@ export function seedDemoData(client: Database.Database): void {
       "show_state",
       "icon",
       null,
-      "Recipe App",
+      "Ghormai",
       "Local demo icon; no external media",
       "approved",
       "bundled",

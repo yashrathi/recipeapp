@@ -7,7 +7,7 @@ export default function HomePage() {
     <main className="page-shell">
       <section className="hero" aria-labelledby="page-title">
         <p className="eyebrow">Milestone 1 foundation</p>
-        <h1 id="page-title">Household Recipe Assistant</h1>
+        <h1 id="page-title">Ghormai</h1>
         <p className="lede">
           Import or enter a recipe, review English cooking guidance and automatic Hindi translation, and publish an
           immutable version for assigned or in-person-request cooking with server-enforced role boundaries.

@@ -267,7 +267,7 @@ export function ReviewForm({ recipe }: { recipe: HomeownerRecipeView }) {
               spokenHindi: "",
               visual: {
                 kind: "action_icon", purpose: "show_action", verification: "approved",
-                rights: "bundled", attribution: "Recipe App verified action-icon fallback", fallback: true,
+                rights: "bundled", attribution: "Ghormai verified action-icon fallback", fallback: true,
               },
             }])}
           >

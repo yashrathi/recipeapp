@@ -12,9 +12,9 @@ export default async function HomeownerLayout({ children }: { children: ReactNod
   return (
     <div className={styles.shell}>
       <header className={styles.topbar}>
-        <Link className={styles.brand} href="/homeowner" aria-label="Recipe App homeowner Today">
-          <span className={styles.brandMark} aria-hidden="true">R</span>
-          <span>Recipe App</span>
+        <Link className={styles.brand} href="/homeowner" aria-label="Ghormai homeowner Today">
+          <span className={styles.brandMark} aria-hidden="true">G</span>
+          <span>Ghormai</span>
         </Link>
         <nav className={styles.nav} aria-label="Homeowner">
           <Link href="/homeowner">Today</Link>

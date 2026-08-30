@@ -189,5 +189,5 @@ test("househelp session cannot open homeowner routes", async ({ page }) => {
   await page.getByRole("button", { name: "Enter househelp shell" }).click();
   await page.goto("/homeowner");
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("heading", { name: "Household Recipe Assistant" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ghormai" })).toBeVisible();
 });
