@@ -13,4 +13,7 @@
 - Use attributed official YouTube playback at a timestamp rather than downloading or repackaging step clips.
 - Accessibility references checked 2026-08-30: [W3C Audio Control](https://www.w3.org/WAI/WCAG22/Understanding/audio-control) recommends user-initiated audio and requires a stop/pause or independent volume mechanism for longer automatic audio; [W3C Non-text Content](https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html) requires equivalent alternatives for meaningful visuals.
 - YouTube policy reference checked 2026-08-30: [YouTube Developer Policies](https://developers.google.com/youtube/terms/developer-policies-guide) require the standard attributed playback experience and prohibit downloading or separating video/audio outside supported behavior.
+- Milestone 1 runtime is Node 24 with Next.js 16.3.3/React 19.2.8. Read the generated Next guidance in `AGENTS.md` and relevant local docs under `node_modules/next/dist/docs/` before changing framework code.
+- SQLite/Drizzle and signed demo role sessions are local foundation choices, not approved production datastore/identity decisions. Production demo auth is disabled.
+- Extracted quantities are stored as validated lossless JSON; legacy nullable numeric columns exist only for forward local migration compatibility and are not authoritative.
 - Launch languages, dialect/pronunciation needs, phone ownership, kitchen noise, speaker audibility, and connectivity still need real-user validation.

@@ -8,3 +8,4 @@ Append completed work oldest first. Current work belongs in `STATE.md`.
 - 2026-08-30 · User approved the Milestone 1 plan and recommended starting defaults. Implementation remained paused pending an explicit start instruction.
 - 2026-08-30 · Froze and integrated `web-recipe-import/v1` with bounded safe-fetch rules, deterministic structured extraction, warning/failure semantics, six parser fixtures, and 20 SSRF/URL-policy cases.
 - 2026-08-30 · Froze and integrated the househelp audio/visual contract with 66 English/Hindi phrase IDs, 25 announced controls, 26 deterministic interaction cases, stale-event guards, readiness/offline semantics, and verified visual fallbacks.
+- 2026-08-30 · Integrated the reviewed platform foundation and its contract-alignment revision: deterministic migrations/seed, signed local sessions with membership validation, typed repository/domain seams, 20 unit tests, production build, and desktop/mobile browser smoke tests.

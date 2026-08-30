@@ -9,22 +9,23 @@ Milestone 1 implementation is active: public webpage recipe import through homeo
 ## Active branches and worktrees
 
 - Coordinator base: `main` at `/Users/yashmac16/Documents/ChatGPT/Recipe App`
-- Foundation worker: `feature/platform-foundation` at `/Users/yashmac16/Documents/ChatGPT/Recipe App-platform-foundation`
-- Visible homeowner task `01a05153-f4d3-7091-87f6-bc55eb1a29b0` at `/Users/yashmac16/.codex/worktrees/d50a/Recipe App` (reserved)
-- Visible import task `01a05153-f172-7252-8c79-bea624f25d53` at `/Users/yashmac16/.codex/worktrees/1283/Recipe App` (reserved)
-- Visible househelp task `01a05153-f6f9-71c0-9997-699f2235d8ac` at `/Users/yashmac16/.codex/worktrees/85f5/Recipe App` (reserved)
+- Visible homeowner task `01a05153-f4d3-7091-87f6-bc55eb1a29b0`, branch `feature/homeowner-recipe-flow`, at `/Users/yashmac16/.codex/worktrees/d50a/Recipe App`
+- Visible import task `01a05153-f172-7252-8c79-bea624f25d53`, branch `feature/web-recipe-import`, at `/Users/yashmac16/.codex/worktrees/1283/Recipe App`
+- Visible househelp task `01a05153-f6f9-71c0-9997-699f2235d8ac`, branch `feature/househelp-cook-mode`, at `/Users/yashmac16/.codex/worktrees/85f5/Recipe App`
 - Visible acceptance-review task `01a05154-027f-7cc2-a232-a7dedd36ac8c` at `/Users/yashmac16/.codex/worktrees/840f/Recipe App` (reserved)
 
 ## Working behavior
 
-- The approved planning baseline plus frozen recipe-import and audio/visual contracts are committed; application code is pending foundation revision.
+- The accepted Node 24/Next.js 16 foundation, frozen contracts, SQLite/Drizzle local persistence, signed demo sessions, role policy, deterministic seed, and test harness are committed.
 - Product brief, UX direction, data/workflow plan, wireframes, and proposed build slices exist as documents. The househelp flow is specified as audio-first, multilingual, and visually assisted with one verified focal visual per screen; core tasks do not depend on reading or imagery alone.
 - Git remote `origin` points to `https://github.com/yashrathi/recipeapp.git`; the remote currently has no branches and nothing has been pushed.
 
 ## Active worker tasks
 
-- Platform foundation revision: reconcile partial drafts, lossless quantities, warnings, speech identity, and visual rights with the two frozen contracts, then rerun all gates.
-- Visible feature/review tasks are reading project context and remain reserved until the shared foundation/contracts are accepted.
+- Homeowner task: implement review/edit/publish/assign and manual fallback UI/API with server-enforced homeowner permissions.
+- Import task: implement `web-recipe-import/v1`, safe fetch, normalization, fixture coverage, and homeowner-only import API.
+- Househelp task: implement the English/Hindi speech reducer, assigned-only cook flow, progress/issues/timers, and verified visual fallbacks.
+- Acceptance task remains reserved until the three feature branches are integrated.
 
 ## Blockers
 
@@ -40,4 +41,4 @@ Milestone 1 implementation is active: public webpage recipe import through homeo
 
 ## Immediate next step
 
-Review the revised foundation against both frozen contracts and integrate it only after all unit, build, and browser gates pass; then release the visible feature workers.
+Monitor and review the three visible feature tasks, integrate only verified commits, then release the independent acceptance reviewer against the combined milestone.
