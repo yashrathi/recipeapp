@@ -2,7 +2,7 @@
 
 ## Current status
 
-Milestone 1 is a locally verified single Next.js TypeScript application on Node.js 24. SQLite is the local development datastore; Drizzle provides typed queries behind repository interfaces. Production hosting, datastore, and identity targets are not selected.
+Ghormai is a verified single Next.js TypeScript application on Node.js 24. Local development uses disposable SQLite; the public Linode preview uses a persistent SQLite file and seeded demo roles. The preview is deployed and operational, but production identity and datastore architecture are still not approved.
 
 ## Coordinator resume
 
@@ -51,7 +51,7 @@ Do not commit `.env.local`, database files, or real secrets. The committed `.env
 
 ## Database lifecycle
 
-`npm run db:migrate` applies the six current SQL migrations in filename order and records them in `app_migrations`; `0040_ad_hoc_cooking.sql` distinguishes scheduled assignments from ad-hoc cooking runs. `npm run db:seed` upserts fixed IDs and timestamps, so rerunning it produces the same demo household, users, recipe, complete bilingual guidance, visual metadata, readiness state, and assignment without duplicates. `npm run db:setup` performs both operations.
+`npm run db:migrate` applies the seven current SQL migrations in filename order and records them in `app_migrations`; `0040_ad_hoc_cooking.sql` distinguishes scheduled assignments from ad-hoc cooking runs and `0040_household_shopping_list.sql` adds the shared shopping-list tables. `npm run db:seed` upserts fixed IDs and timestamps, so rerunning it produces the same demo household, users, recipe, complete bilingual guidance, visual metadata, readiness state, and assignment without duplicates. `npm run db:setup` performs both operations.
 
 The local database is disposable. To rebuild it, stop the app, move `.data/recipe-app.sqlite` and its `-shm`/`-wal` companions out of `.data`, then run `npm run db:setup`. Moving the files preserves a recoverable backup. There are no production rollback commands until a production datastore is selected; SQL migrations are forward-only in this milestone.
 
@@ -73,9 +73,9 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The E2E runner initializes deterministic data in a dedicated per-run `.data/playwright-<pid>.sqlite` database and starts its own development server on port `3100` by default. It never reuses the normal port-3000 server or database. Stop any active `next dev` process before starting the browser suite because Next.js permits only one development process per build directory. It intentionally uses one worker because the desktop and mobile projects share the isolated fixture. Set `PORT` or `PLAYWRIGHT_DATABASE_PATH` only when a controlled test environment requires an override. Four desktop cases are skipped because their cook-mode acceptance is deliberately phone-only. HTML reports are written to the ignored `playwright-report/` directory.
+The E2E runner initializes deterministic data in a dedicated per-run `.data/playwright-<pid>.sqlite` database and starts its own development server on port `3100` by default. It never reuses the normal port-3000 server or database. Stop any active `next dev` process before starting the browser suite because Next.js permits only one development process per build directory. It intentionally uses one worker because the desktop and mobile projects share the isolated fixture. Set `PORT` or `PLAYWRIGHT_DATABASE_PATH` only when a controlled test environment requires an override. Viewport-scoped skips are intentional when a flow is verified only at its relevant phone or desktop target. HTML reports are written to the ignored `playwright-report/` directory.
 
-Current integrated baseline: 19 test files / 199 Vitest tests, lint, strict TypeScript, a warning-free production build, and 14 passing Playwright cases across desktop/mobile with 4 intentional desktop skips. When a development server owns the coordinator checkout's `.next` directory, preserve it and run browser acceptance from a detached worktree on an unused port with an isolated database.
+Current integrated baseline: 22 test files / 220 Vitest tests, lint, strict TypeScript, a warning-free production build, and 17 passing Playwright cases across desktop/mobile with 5 intentional skips. When a development server owns the coordinator checkout's `.next` directory, preserve it and run browser acceptance from an isolated checkout or clean source copy on an unused port with an isolated database.
 
 ## Runtime checks
 
@@ -91,7 +91,16 @@ Current integrated baseline: 19 test files / 199 Vitest tests, lint, strict Type
 
 ## Deployment and rollback
 
-Verified `main` is pushed to the private GitHub repository, but no deployment target is approved or connected. Before deployment, complete real-device/assistive-technology validation, select a persistent production datastore, replace local demo authentication with the approved identity flow, configure encrypted secrets, exercise migrations against a backup, and document platform-specific health, deployment, and rollback commands here. A default Vercel deployment would not make the current app functional: local SQLite is not a durable production datastore and the development-only demo session endpoint is disabled when `NODE_ENV=production`.
+The public preview is `https://ghormai.everythingweb.in` on the SSH target `linode`. Caddy serves the separate gateway at `/` and proxies other paths to PM2 app `ghormai` on `127.0.0.1:3021`. Immutable releases live under `/opt/ghormai/releases`; `/opt/ghormai/current` is the active symlink. Runtime configuration is `/etc/ghormai/ghormai.env`, the persistent database is `/var/lib/ghormai/recipe-app.sqlite`, and Node is `/opt/node24`.
+
+For a release:
+
+1. Verify and push the exact `main` commit. Package only clean tracked source; exclude `.git`, `.next`, `node_modules`, `.data`, environment files, reports, and editor metadata. On macOS, set `COPYFILE_DISABLE=1` or otherwise prove no `._*` AppleDouble files exist before migration discovery.
+2. Upload and build in a uniquely named staging directory under `/opt/ghormai/incomplete`, then atomically rename the completed directory into `/opt/ghormai/releases/<commit>`. Never run `next build` in the active release or replace its `.next` directory in place; Next removes/recreates manifests during a build and live requests will return `500`.
+3. Create a consistent SQLite `.backup` under `/var/lib/ghormai/backups`, source `/etc/ghormai/ghormai.env`, and run `/opt/node24/bin/npm run db:migrate` from the new release.
+4. Confirm no other deployment/build process targets the release, atomically replace `/opt/ghormai/current`, restart `ghormai` with PM2, and prove `/proc/<pm2-pid>/cwd` resolves to the final release. Require both `http://127.0.0.1:3021/api/health` and the public HTTPS health route to pass, then verify the gateway, an authenticated homeowner page, and the changed user flow.
+
+For application rollback, atomically point `/opt/ghormai/current` to the previous retained release and restart `ghormai`. Migrations are forward-only; do not automatically restore the database because that can discard writes made after deployment. Use the pre-release SQLite backup only for an explicitly authorized data-recovery decision.
 
 ## Planning verification
 
