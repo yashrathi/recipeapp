@@ -16,7 +16,13 @@ async function installSpeechMock(page: import("@playwright/test").Page) {
         }>;
         entries.push({ text, locale });
         window.sessionStorage.setItem(storageKey, JSON.stringify(entries));
-        const testWindow = window as Window & { __HOUSEHELP_STALL_DONE_SPEECH__?: boolean };
+        const testWindow = window as Window & {
+          __HOUSEHELP_FAIL_SPEECH__?: boolean;
+          __HOUSEHELP_STALL_DONE_SPEECH__?: boolean;
+        };
+        if (testWindow.__HOUSEHELP_FAIL_SPEECH__) {
+          return Promise.reject(new Error("speech_failed"));
+        }
         if (testWindow.__HOUSEHELP_STALL_DONE_SPEECH__) {
           return new Promise<void>(() => undefined);
         }
@@ -228,6 +234,27 @@ test("cooking menu remains an explicit escape from an active task", async ({ pag
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await menuButton.click();
   await expect(page).toHaveURL(/\/househelp$/);
+});
+
+test("task action opens when activation speech fails", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "The task-action regression is exercised at the narrow-phone target.");
+
+  await installSpeechMock(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Enter househelp shell" }).click();
+  await page.goto("/househelp");
+  await page.getByRole("button", { name: /Turn on sound|आवाज़ चालू करें/ }).click();
+  await page.getByRole("button", { name: "हिन्दी", exact: true }).click();
+  await page.getByRole("button", { name: "आगे बढ़ें" }).click();
+  await expect(page.getByRole("heading", { name: "पालक पनीर" })).toBeVisible();
+  await page.evaluate(() => {
+    (window as Window & { __HOUSEHELP_FAIL_SPEECH__?: boolean })
+      .__HOUSEHELP_FAIL_SPEECH__ = true;
+  });
+  await page.getByRole("button", { name: "शुरू करें" }).click();
+
+  await expect(page).toHaveURL(/\/househelp\/demo-assignment$/);
+  await expect(page.locator("main")).toHaveAttribute("data-view", "today");
 });
 
 test("househelp completes the audio-first cook flow on a narrow phone", completeCookFlow);

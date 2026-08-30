@@ -226,14 +226,13 @@ export function HousehelpTaskMenu({
         dish: task.translations[locale].dish,
       }) },
     ]);
-    if (outcome === "completed") {
-      void fetch(`/api/househelp/assignments/${encodeURIComponent(task.id)}/progress`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ type: "locale", locale }),
-      }).catch(() => undefined);
-      router.push(`/househelp/${encodeURIComponent(task.id)}`);
-    }
+    if (outcome === "dropped") return;
+    void fetch(`/api/househelp/assignments/${encodeURIComponent(task.id)}/progress`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ type: "locale", locale }),
+    }).catch(() => undefined);
+    router.push(`/househelp/${encodeURIComponent(task.id)}`);
   }
 
   function stopSpeech() {
