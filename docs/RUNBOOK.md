@@ -89,7 +89,7 @@ Current verified baseline: 18 test files / 187 Vitest tests, a warning-free prod
 
 ## Deployment and rollback
 
-No deployment target is approved and nothing has been pushed. Before deployment, complete real-device/assistive-technology validation, select a persistent production datastore, replace local demo authentication with the approved identity flow, configure encrypted secrets, exercise migrations against a backup, and document platform-specific health, deployment, and rollback commands here.
+Verified `main` is pushed to the private GitHub repository, but no deployment target is approved or connected. Before deployment, complete real-device/assistive-technology validation, select a persistent production datastore, replace local demo authentication with the approved identity flow, configure encrypted secrets, exercise migrations against a backup, and document platform-specific health, deployment, and rollback commands here. A default Vercel deployment would not make the current app functional: local SQLite is not a durable production datastore and the development-only demo session endpoint is disabled when `NODE_ENV=production`.
 
 ## Planning verification
 

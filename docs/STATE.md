@@ -25,7 +25,7 @@ All accepted Milestone 1 and Milestone 2 worker commits are cherry-picked to `ma
 - Visuals are deliberately light: bundled focal state/action illustrations have accessible equivalents, while spoken guidance remains authoritative.
 - Integrated `npm run verify` passes lint, strict TypeScript, 18 files / 187 tests, and the production build. Integrated Playwright acceptance passes 10 desktop/mobile flows with 2 intentional desktop skips for phone-only cook-mode cases.
 - The exact Pinch-of-Yum page succeeds through both repaired direct fetch and forced Firecrawl fallback with deterministic extraction (12 ingredients, 7 steps). A live captioned YouTube recipe succeeds through Firecrawl transcript retrieval and OpenAI evidence extraction as `partial_success` (3 evidenced ingredients, 12 steps, language recorded, no timestamps fabricated). Credentials and raw source/transcript text were not printed or persisted by the smoke harness.
-- Git remote `origin` points to `https://github.com/yashrathi/recipeapp.git`; the remote currently has no branches and nothing has been pushed.
+- Verified `main` is pushed to the private GitHub repository `https://github.com/yashrathi/recipeapp.git`; GitHub default branch is `main`.
 
 ## Blockers
 
@@ -47,4 +47,4 @@ All accepted Milestone 1 and Milestone 2 worker commits are cherry-picked to `ma
 
 ## Immediate next step
 
-Push verified `main`, then select a compatible production hosting, persistent datastore, and identity target before deploying. Real-device househelp sessions remain required before production launch.
+Select a compatible public hosting target, persistent datastore, and production identity approach before deploying. No Vercel/Render/Railway/Fly/Cloudflare link or deployment configuration exists in the repository. Real-device househelp sessions remain required before production launch.

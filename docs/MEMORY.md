@@ -1,7 +1,7 @@
 # Durable Memory
 
 - The repository was already an empty Git repository on 2026-08-30; no Git initialization was performed.
-- Git remote `origin` is `https://github.com/yashrathi/recipeapp.git`.
+- Git remote `origin` is the private repository `https://github.com/yashrathi/recipeapp.git`; verified `main` was first pushed on 2026-08-30.
 - The user explicitly authorized the complete Milestone 1 build and later authorized Milestone 2 implementation, integration, push, and deployment on 2026-08-30. Milestones 1 and 2 are integrated and locally verified; do not infer approval for later product milestones.
 - Swiggy cart, pricing, checkout, or delivery-tracking access is not known. Validate official partner/API access before committing scope or architecture.
 - Preserve source attribution, extraction evidence, and per-field uncertainty. Never fabricate a recipe when a transcript or page cannot be processed.
