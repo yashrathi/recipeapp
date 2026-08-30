@@ -1,6 +1,6 @@
 # Build Plan
 
-Status: Milestone 1 implemented and independently verified locally on 2026-08-30. Milestone 2 was approved for implementation on 2026-08-30; later milestones remain proposed.
+Status: Milestones 1 and 2 are integrated and independently verified locally on 2026-08-30. Later milestones remain proposed.
 
 The sequence uses complete vertical slices. Later milestones may change after user research and integration discovery.
 
@@ -37,7 +37,7 @@ Acceptance achieved locally:
 
 ## Milestone 2: Broad-source recipe import
 
-Status: implemented and verified on isolated branch `feature/broad-source-import`; integration into `main` awaits explicit authorization.
+Status: integrated into `main` after explicit authorization; all automated and bounded live acceptance gates pass.
 
 Goal: make the existing reviewed import workflow work across more public recipe webpages and public YouTube videos without inventing recipe content.
 
@@ -59,7 +59,7 @@ Acceptance gates:
 - Optional video help uses the attributed official YouTube player at the relevant timestamp; the app does not create or cache standalone YouTube clips.
 - Missing transcript and ambiguous extraction have recoverable review states.
 - Firecrawl and OpenAI calls are server-only, bounded, mock-tested, and disabled cleanly when credentials are absent.
-- Recipe/transcript content is not retained by OpenAI beyond request processing (`store: false`); the app persists only the source/evidence needed by its reviewed draft workflow.
+- OpenAI requests use `store: false`; this disables retrievable response storage but is not a zero-retention guarantee. The app persists only the source/evidence needed by its reviewed draft workflow.
 - No YouTube Data API key, browser cookies, `yt-dlp`, downloaded video/audio, invented nutrition, or invented servings/times are part of this milestone.
 - Cost, retention, platform terms, and transcription limits are documented.
 

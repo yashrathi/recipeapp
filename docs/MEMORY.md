@@ -1,8 +1,8 @@
 # Durable Memory
 
 - The repository was already an empty Git repository on 2026-08-30; no Git initialization was performed.
-- Git remote `origin` is `https://github.com/yashrathi/recipeapp.git`. Nothing has been pushed.
-- The user explicitly authorized the complete Milestone 1 build on 2026-08-30. That milestone is integrated and locally verified; do not infer approval for later milestones, deployment, or pushing.
+- Git remote `origin` is `https://github.com/yashrathi/recipeapp.git`.
+- The user explicitly authorized the complete Milestone 1 build and later authorized Milestone 2 implementation, integration, push, and deployment on 2026-08-30. Milestones 1 and 2 are integrated and locally verified; do not infer approval for later product milestones.
 - Swiggy cart, pricing, checkout, or delivery-tracking access is not known. Validate official partner/API access before committing scope or architecture.
 - Preserve source attribution, extraction evidence, and per-field uncertainty. Never fabricate a recipe when a transcript or page cannot be processed.
 - Separate canonical recipe versions from cooking-session progress and translations.
@@ -17,6 +17,10 @@
 - SQLite/Drizzle and signed demo role sessions are local foundation choices, not approved production datastore/identity decisions. Production demo auth is disabled.
 - Extracted quantities are stored as validated lossless JSON; legacy nullable numeric columns exist only for forward local migration compatibility and are not authoritative.
 - The import API returns a persisted import envelope; homeowner consumers must unwrap its `data` member instead of assuming the draft is the top-level response.
+- Node 24 may invoke a custom HTTP `lookup` callback with `options.all=true`; pinned-address transports must return an address array for that shape or Node raises `ERR_INVALID_IP_ADDRESS`.
+- Firecrawl standard paid plans may reject `zeroDataRetention:true` with `403`. Always disable provider caching, make ZDR explicit opt-in for capable accounts, and never silently retry without ZDR after a rejected ZDR request.
+- Firecrawl YouTube transcript markdown may omit timestamps or language. Preserve only supplied metadata, never synthesize timestamps, and fail to manual entry when a usable transcript is absent.
+- Live Firecrawl-to-OpenAI YouTube import currently takes roughly 42–52 seconds. OpenAI extraction is bounded at 60 seconds; production request ceilings need additional headroom or a later background-job design.
 - Publication requires reviewed English and Hindi speech for the dish, every ingredient, and every step. Assignment atomically pins both locale snapshots, exact bilingual notes, the published recipe version, spoken-content identity, and eligible bundled visual metadata.
 - Househelp progress mutations are assignment-scoped and idempotent. A bounded local queue retries connectivity failures; rejected `409` mutations are retained for recovery rather than silently treated as success. A five-second stalled request guard releases the UI without allowing stale responses to overwrite current state.
 - Local Playwright runs use one worker because desktop and mobile projects share deterministic SQLite state. They use a dedicated per-run database and port `3100`; never reuse the normal development server/database for browser acceptance tests.
