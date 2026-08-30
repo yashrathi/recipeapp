@@ -221,9 +221,9 @@ The tap says: “Sound is on. Choose your language. Tap a button to hear it.” 
 
 Tap response: each option speaks its own language name. Selection says, for example, “Hindi selected. Press the large button below to continue.”
 
-## Househelp — HH1 Today
+## Househelp — HH1 Cooking menu
 
-Only the next task is prominent. On entry, the app says: “Today. Next, make paneer butter masala for lunch. Press Start.”
+Only one active assignment is prominent at a time. On entry, the app speaks its date, meal, target time, and `Start`/`Resume` action. `Next` cycles through other assigned dishes without requiring reading.
 
 ```text
 ┌──────────────────────────────────────────┐
@@ -242,11 +242,13 @@ Only the next task is prominent. On entry, the app says: “Today. Next, make pa
 │  │             ▶ START               │  │
 │  └────────────────────────────────────┘  │
 │                                          │
-│                 ? Help                   │
+│  ┌────────────────────────────────────┐  │
+│  │          NEXT DISH  →             │  │
+│  └────────────────────────────────────┘  │
 └──────────────────────────────────────────┘
 ```
 
-Tap response: “Start. Paneer butter masala. First, check the ingredients.”
+Tap response: “Start. Opening paneer butter masala.” `Next` says its label, then announces the next assigned dish in full.
 
 ## Househelp — HH2 Task briefing
 
@@ -375,14 +377,14 @@ The app says: “Cooking complete. Paneer butter masala is ready. Press Done to 
 └──────────────────────────────────────────┘
 ```
 
-Tap response: “Done. The homeowner has been told.”
+Tap response: “Done. The homeowner has been told.” The app then returns to the cooking menu; the completed assignment is absent, and the next assigned dish or no-task state is presented.
 
 ## Spoken interaction examples
 
 | Interaction | Spoken response |
 |---|---|
 | First app tap | `Sound is on. Choose your language. Tap a button to hear it.` |
-| Open Today | `Today. Next, make paneer butter masala for lunch. Press Start.` |
+| Open cooking menu | `Cooking menu. Dish one of two. Paneer butter masala on Monday for lunch. Ready by one o’clock. Press Start, or Next for another dish.` |
 | Tap Start | `Start. First, check the ingredients.` |
 | Tap Have it | `Have it. Next ingredient: two tomatoes.` |
 | Tap Missing | `Missing. The homeowner has been told.` |
@@ -403,12 +405,13 @@ flowchart LR
     C --> E["Publish recipe version"]
     E --> F["Assign date, meal, househelp, language"]
     F --> O["Househelp: Hear and confirm language"]
-    O --> G["Hear today's next task"]
+    O --> G["Hear and browse assigned dishes"]
     G --> H["Check ingredients"]
     H -->|missing| I["Notify homeowner"]
     H -->|ready| J["Hear one cooking step"]
     J -->|Next| J
     J --> K["Complete task"]
+    K -->|Done| G
     E --> L["Shopping list"]
     L --> M["Match provider products"]
     M --> N["Homeowner confirms handoff"]

@@ -48,12 +48,12 @@ Recommended authentication assumption: homeowner uses email/phone sign-in; house
 | ID | Screen | Purpose | Key content/actions |
 |---|---|---|---|
 | HH0 | Spoken-language setup | Hear language samples and select one without reading | sample playing, selected, audio unavailable |
-| HH1 | Today | Hear the next assigned meal and start/resume it | start, resume, no task, changed task |
+| HH1 | Cooking menu | Hear and browse active/upcoming assigned meals one item at a time | next item, start, resume, no task, changed task |
 | HH2 | Task briefing | Hear dish, target time, servings, and homeowner note | repeat, ingredients, start, cannot complete |
 | HH3 | Ingredient check | Confirm one spoken ingredient with one verified visual at a time | have it, missing, repeat, visual unavailable, complete |
 | HH4 | Cook mode | Hear and see one cooking action at a time | repeat, next, timer, optional media help, audio/visual failure |
 | HH5 | Completion | Hear confirmation and report a simple outcome | done, changed, need help |
-| HH6 | Upcoming/completed | Hear future or recent assignments one item at a time | next item, repeat, back |
+| HH6 | Completed history | Hear recent completed assignments one item at a time | next item, repeat, back |
 
 ### System and exception surfaces
 
@@ -108,7 +108,7 @@ Failure path: show `Transcript unavailable` and offer retry/manual entry instead
 ### E. Prepare and cook
 
 1. At first setup, one full-screen speaker control invites the initial tap needed to start audio. The app then speaks the language-selection prompt; each language option says its own name aloud, and the chosen language is immediately confirmed and remembered.
-2. Househelp opens Today. The app automatically announces the next task, time, and single primary action.
+2. Househelp opens the cooking menu. The app announces one assigned dish with its date, meal, target time, and `Start`/`Resume` action; `Next` cycles through other active assignments.
 3. Opening the task speaks a short briefing: dish, servings, target time, and homeowner note.
 4. Ingredient check presents one item at a time with a verified ingredient photo when available and asks a spoken question such as `Do you have one cup of spinach?`
 5. Tapping `Have it`, `Missing`, or `Repeat` speaks the control label. `Missing` also confirms that the homeowner was notified.
@@ -117,7 +117,7 @@ Failure path: show `Transcript unavailable` and offer retry/manual entry instead
 8. A user may tap a verified step image or video for help. Motion never auto-plays and never blocks `Repeat`, `Next`, or `Help`.
 9. Timers announce start, remaining-time checkpoints only when useful, and completion without overlapping instructions.
 10. Progress auto-saves. After interruption or reconnection, the app announces the restored step before accepting input.
-11. Completion is spoken and requires one large confirmation. Homeowner sees status: not started, preparing, cooking, blocked, or done.
+11. Completion is spoken and requires one large confirmation. Homeowner sees status: not started, preparing, cooking, blocked, or done; after confirmation the househelp returns to the cooking menu and the completed task is no longer offered.
 
 The core path must remain operable by listening and tapping. Text and simple icons reinforce the spoken interface but are not required to understand it.
 

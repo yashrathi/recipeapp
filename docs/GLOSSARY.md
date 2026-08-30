@@ -4,6 +4,7 @@
 - **Audio-first mode:** The househelp interaction mode in which listening and tapping are sufficient to complete every core task; text is supplementary.
 - **Canonical recipe:** The household's reviewed recipe record, independent of any translated presentation.
 - **Cook mode:** The househelp-focused, one-step-at-a-time execution screen.
+- **Cooking menu:** The househelp-facing, one-item-at-a-time list of active assigned dishes available to start or resume; it is not the household recipe library.
 - **Cooking session:** One attempt to perform an assignment, pinned to a specific recipe version.
 - **Extraction warning:** A field-level indication that data is missing, ambiguous, or low confidence.
 - **Househelp:** The household member who prepares assigned dishes and reports progress or issues.

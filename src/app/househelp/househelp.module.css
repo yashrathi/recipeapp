@@ -144,6 +144,12 @@
   font-weight: 750;
 }
 
+.menuDate {
+  margin: -0.75rem 0 1.5rem;
+  color: var(--hh-muted);
+  font-weight: 750;
+}
+
 .primaryButton,
 .warningButton,
 .secondaryButton,

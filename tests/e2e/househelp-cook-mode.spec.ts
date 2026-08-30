@@ -25,14 +25,27 @@ async function installSpeechMock(page: import("@playwright/test").Page) {
   });
 }
 
+async function openFirstTaskFromMenu(page: Page) {
+  await expect(page.getByRole("heading", { name: "Cooking menu" })).toBeVisible();
+  await page.getByRole("button", { name: "Turn on sound" }).click();
+  await page.getByRole("button", { name: "हिन्दी", exact: true }).click();
+  await page.getByRole("button", { name: "आगे बढ़ें" }).click();
+  await expect(page.getByRole("heading", { name: "पालक पनीर" })).toBeVisible();
+  await page.getByRole("button", { name: "शुरू करें" }).click();
+  await expect(page).toHaveURL(/\/househelp\/demo-assignment$/);
+  await page.waitForLoadState("networkidle");
+}
+
 async function completeCookFlow({ page, isMobile }: { page: Page; isMobile: boolean }) {
   test.skip(!isMobile, "The no-reading acceptance path is exercised at the narrow-phone target.");
+  test.setTimeout(60_000);
 
   await installSpeechMock(page);
 
   await page.goto("/");
   await page.getByRole("button", { name: "Enter househelp shell" }).click();
   await page.goto("/househelp");
+  await openFirstTaskFromMenu(page);
   await expect(page.locator("main")).toHaveAttribute("data-view", "audio_gate");
 
   await page.getByRole("button", { name: "Turn on sound" }).click();
@@ -75,7 +88,13 @@ async function completeCookFlow({ page, isMobile }: { page: Page; isMobile: bool
   await page.getByRole("button", { name: "अगला" }).click();
   await expect(page.locator("main")).toHaveAttribute("data-view", "completion");
   await page.getByRole("button", { name: "पूरा हुआ" }).click();
-  await expect(page.getByText("पूरा हुआ। घर के मालिक को बता दिया गया है।")).toBeVisible();
+  await expect(page).toHaveURL(/\/househelp$/);
+  await expect(page.getByRole("heading", { name: /Cooking menu|No cooking tasks/ })).toBeVisible();
+
+  const menuResponse = await page.request.get("/api/househelp/assignments");
+  expect(menuResponse.ok()).toBeTruthy();
+  const menuPayload = await menuResponse.json() as { assignments: Array<{ id: string }> };
+  expect(menuPayload.assignments.map(({ id }) => id)).not.toContain("demo-assignment");
 
   const response = await page.request.get("/api/househelp/assignments/demo-assignment");
   expect(response.ok()).toBeTruthy();
@@ -131,6 +150,7 @@ test("409 and stalled progress responses cannot leave ingredient controls locked
   await page.goto("/");
   await page.getByRole("button", { name: "Enter househelp shell" }).click();
   await page.goto("/househelp");
+  await openFirstTaskFromMenu(page);
   await page.getByRole("button", { name: "Turn on sound" }).click();
   await page.getByRole("button", { name: "हिन्दी", exact: true }).click();
   await page.getByRole("button", { name: "आगे बढ़ें" }).click();

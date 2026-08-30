@@ -121,6 +121,31 @@ describe("househelp server authorization and progress persistence", () => {
     expect(repository.listVisible(actor)).toHaveLength(1);
   });
 
+  it("lists active assigned dishes as an ordered bilingual cooking menu", () => {
+    createOwnedAssignment("later-assignment");
+
+    expect(repository.listVisible(actor)).toMatchObject([
+      {
+        id: DEMO_IDS.assignment,
+        scheduledDate: "2026-08-31",
+        status: "scheduled",
+        translations: {
+          "en-IN": { dish: "paneer and spinach", meal: "lunch" },
+          "hi-IN": { dish: "पालक पनीर", meal: "दोपहर के खाने" },
+        },
+      },
+      {
+        id: "later-assignment",
+        scheduledDate: "2026-09-01",
+        status: "scheduled",
+      },
+    ]);
+
+    client.prepare("UPDATE cooking_assignments SET status = 'done' WHERE id = ?")
+      .run(DEMO_IDS.assignment);
+    expect(repository.listVisible(actor).map(({ id }) => id)).toEqual(["later-assignment"]);
+  });
+
   it("skips an incomplete legacy assignment when choosing the next cooking task", () => {
     client.prepare(
       `INSERT INTO cooking_assignments

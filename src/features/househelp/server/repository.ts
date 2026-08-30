@@ -50,34 +50,76 @@ export interface HousehelpAssignmentData {
   progress: PersistedHousehelpProgress | null;
 }
 
+export interface HousehelpAssignmentSummary {
+  id: string;
+  scheduledDate: string;
+  targetTime: string | null;
+  status: string;
+  selectedLocale: "en-IN" | "hi-IN";
+  translations: Record<"en-IN" | "hi-IN", {
+    dish: string;
+    meal: string;
+    servingsSpeech: string;
+    targetTimeSpeech: string;
+  }>;
+}
+
 export class HousehelpRepository {
   constructor(private readonly client: Database.Database) {}
 
-  listVisible(actor: HouseholdActor): Array<{
-    id: string;
-    recipeVersionId: string;
-    locale: "en-IN" | "hi-IN";
-    status: string;
-  }> {
+  listVisible(actor: HouseholdActor): HousehelpAssignmentSummary[] {
     if (actor.role !== "househelp") throw new HousehelpAccessError(403, "Househelp access required.");
-    return this.client
+    const assignments = this.client
       .prepare(
-        `SELECT id, recipe_version_id, selected_locale, status
-         FROM cooking_assignments
-         WHERE household_id = ? AND assignee_id = ?
-           AND status NOT IN ('cancelled', 'reassigned')
-         ORDER BY scheduled_date, target_time`,
+        `SELECT a.id, a.household_id, a.assignee_id, a.recipe_version_id,
+                a.selected_locale, a.status, a.scheduled_date, a.target_time
+         FROM cooking_assignments a
+         WHERE a.household_id = ? AND a.assignee_id = ?
+           AND a.status NOT IN ('cancelled', 'reassigned', 'done')
+           AND EXISTS (
+             SELECT 1 FROM househelp_assignment_snapshots en_snapshot
+             WHERE en_snapshot.assignment_id = a.id
+               AND en_snapshot.recipe_version_id = a.recipe_version_id
+               AND en_snapshot.locale = 'en-IN'
+           )
+           AND EXISTS (
+             SELECT 1 FROM househelp_assignment_snapshots hi_snapshot
+             WHERE hi_snapshot.assignment_id = a.id
+               AND hi_snapshot.recipe_version_id = a.recipe_version_id
+               AND hi_snapshot.locale = 'hi-IN'
+           )
+         ORDER BY a.scheduled_date, a.target_time, a.created_at, a.id`,
       )
-      .all(actor.householdId, actor.userId)
-      .map((row) => {
-        const typed = row as Omit<AssignmentRow, "household_id" | "assignee_id">;
-        return {
-          id: typed.id,
-          recipeVersionId: typed.recipe_version_id,
-          locale: typed.selected_locale,
-          status: typed.status,
-        };
-      });
+      .all(actor.householdId, actor.userId) as Array<AssignmentRow & {
+        scheduled_date: string;
+        target_time: string | null;
+      }>;
+
+    return assignments.map((assignment) => {
+      const english = this.validatePinnedSnapshot(assignment, "en-IN").translations["en-IN"];
+      const hindi = this.validatePinnedSnapshot(assignment, "hi-IN").translations["hi-IN"];
+      return {
+        id: assignment.id,
+        scheduledDate: assignment.scheduled_date,
+        targetTime: assignment.target_time,
+        status: assignment.status,
+        selectedLocale: assignment.selected_locale,
+        translations: {
+          "en-IN": {
+            dish: english.dish,
+            meal: english.meal,
+            servingsSpeech: english.servingsSpeech,
+            targetTimeSpeech: english.targetTimeSpeech,
+          },
+          "hi-IN": {
+            dish: hindi.dish,
+            meal: hindi.meal,
+            servingsSpeech: hindi.servingsSpeech,
+            targetTimeSpeech: hindi.targetTimeSpeech,
+          },
+        },
+      };
+    });
   }
 
   getVisible(actor: HouseholdActor, assignmentId?: string): HousehelpAssignmentData | null {

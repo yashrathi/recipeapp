@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/househelp/househelp.module.css";
@@ -151,6 +152,7 @@ function mutationBody(
 
 export function HousehelpCookMode({ initialData }: { initialData: InitialData }) {
   const { snapshot } = initialData;
+  const router = useRouter();
   const adapter = useMemo(() => new BrowserSpeechAdapter(), []);
   const queue = useMemo(() => new SerializedSpeechQueue(adapter), [adapter]);
   const [state, setRenderedState] = useState(() => stateWithProgress(initialData));
@@ -380,6 +382,10 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
     if (outcome !== "completed" || !isSpeechTokenCurrent(token, stateRef.current)) return;
 
     setState({ ...stateRef.current, speechStatus: "idle" });
+    if (event.type === "DONE") {
+      router.replace("/househelp");
+      return;
+    }
     if (event.type === "PLAY" || event.type === "REPLAY_MEDIA") {
       setMediaPlaybackActive(true);
       window.setTimeout(() => {
@@ -394,7 +400,7 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
       const endsAt = new Date(Date.now() + timer.durationSeconds * 1_000).toISOString();
       await eventRunnerRef.current({ type: "TIMER_STARTED", endsAt });
     }
-  }, [adapter, persistEffects, queue, setState, snapshot]);
+  }, [adapter, persistEffects, queue, router, setState, snapshot]);
 
   eventRunnerRef.current = runEvent;
 
