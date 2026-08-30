@@ -383,7 +383,19 @@ export class HousehelpRepository {
        FROM cooking_assignments a
        WHERE a.household_id = ? AND a.assignee_id = ?
          AND a.status NOT IN ('cancelled', 'reassigned', 'done')
-       ORDER BY a.scheduled_date, a.target_time LIMIT 1`,
+         AND EXISTS (
+           SELECT 1 FROM househelp_assignment_snapshots en_snapshot
+           WHERE en_snapshot.assignment_id = a.id
+             AND en_snapshot.recipe_version_id = a.recipe_version_id
+             AND en_snapshot.locale = 'en-IN'
+         )
+         AND EXISTS (
+           SELECT 1 FROM househelp_assignment_snapshots hi_snapshot
+           WHERE hi_snapshot.assignment_id = a.id
+             AND hi_snapshot.recipe_version_id = a.recipe_version_id
+             AND hi_snapshot.locale = 'hi-IN'
+         )
+       ORDER BY a.scheduled_date, a.target_time, a.created_at, a.id LIMIT 1`,
     ).get(actor.householdId, actor.userId) as AssignmentRow | undefined) ?? null;
   }
 

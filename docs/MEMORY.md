@@ -19,5 +19,5 @@
 - The import API returns a persisted import envelope; homeowner consumers must unwrap its `data` member instead of assuming the draft is the top-level response.
 - Publication requires reviewed English and Hindi speech for the dish, every ingredient, and every step. Assignment atomically pins both locale snapshots, exact bilingual notes, the published recipe version, spoken-content identity, and eligible bundled visual metadata.
 - Househelp progress mutations are assignment-scoped and idempotent. A bounded local queue retries connectivity failures; rejected `409` mutations are retained for recovery rather than silently treated as success. A five-second stalled request guard releases the UI without allowing stale responses to overwrite current state.
-- Local Playwright runs use one worker because desktop and mobile projects share deterministic SQLite state.
+- Local Playwright runs use one worker because desktop and mobile projects share deterministic SQLite state. They use a dedicated per-run database and port `3100`; never reuse the normal development server/database for browser acceptance tests.
 - Launch languages, dialect/pronunciation needs, phone ownership, kitchen noise, speaker audibility, and connectivity still need real-user validation.

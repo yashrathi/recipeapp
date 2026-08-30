@@ -121,6 +121,24 @@ describe("househelp server authorization and progress persistence", () => {
     expect(repository.listVisible(actor)).toHaveLength(1);
   });
 
+  it("skips an incomplete legacy assignment when choosing the next cooking task", () => {
+    client.prepare(
+      `INSERT INTO cooking_assignments
+        (id, household_id, recipe_version_id, assignee_id, created_by, scheduled_date,
+         meal_slot, target_time, target_servings, selected_locale, notes, status, created_at, updated_at)
+       VALUES ('legacy-assignment-without-snapshot', ?, ?, ?, ?, '2026-08-30', 'lunch',
+               '11:00', 2, 'en-IN', NULL, 'scheduled',
+               '2026-08-30T05:00:00.000Z', '2026-08-30T05:00:00.000Z')`,
+    ).run(
+      DEMO_IDS.household,
+      DEMO_IDS.recipeVersion,
+      DEMO_IDS.househelp,
+      DEMO_IDS.homeowner,
+    );
+
+    expect(repository.getVisible(actor)?.snapshot.assignment.id).toBe(DEMO_IDS.assignment);
+  });
+
   it("denies cross-assignment reads and writes at the repository boundary", () => {
     client.prepare(
       `INSERT INTO cooking_assignments

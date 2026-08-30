@@ -22,7 +22,7 @@ All accepted worker commits are cherry-picked to `main`. The worktrees are retai
 - A homeowner can import a supported public recipe webpage or use manual entry, inspect source evidence/warnings, edit the draft, review exact English/Hindi dish, ingredient, and step speech, publish, and assign a pinned recipe snapshot with optional bilingual notes.
 - A househelp sees only their next assigned task and can use English/Hindi audio setup, one-at-a-time ingredient checks, automatically spoken steps, Repeat/Stop/Help/language controls, timers, resume, issue reporting, and completion on a narrow phone. Progress is persisted server-side and mirrored in a bounded local retry queue for intermittent connectivity.
 - Visuals are deliberately light: bundled focal state/action illustrations have accessible equivalents, while spoken guidance remains authoritative.
-- `npm run verify` passes lint, strict TypeScript, 134 unit/integration tests, and the production build. Playwright passes 10 desktop/mobile flows with 2 intentional desktop skips for phone-only cook-mode cases. Production smoke checks return `200` for landing/health and `404` for the demo-session endpoint.
+- `npm run verify` passes lint, strict TypeScript, 135 unit/integration tests, and the production build. Playwright passes 10 desktop/mobile flows with 2 intentional desktop skips for phone-only cook-mode cases. Production smoke checks return `200` for landing/health and `404` for the demo-session endpoint.
 - Git remote `origin` points to `https://github.com/yashrathi/recipeapp.git`; the remote currently has no branches and nothing has been pushed.
 
 ## Blockers

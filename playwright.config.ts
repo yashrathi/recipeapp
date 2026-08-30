@@ -1,7 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const testPort = process.env.PORT ?? "3000";
+const testPort = process.env.PORT ?? "3100";
 const baseURL = `http://localhost:${testPort}`;
+const testDatabasePath = process.env.PLAYWRIGHT_DATABASE_PATH
+  ?? `.data/playwright-${process.pid}.sqlite`;
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -22,7 +24,10 @@ export default defineConfig({
   webServer: {
     command: `npm run db:setup && npm run dev -- -p ${testPort}`,
     url: `${baseURL}/api/health`,
-    reuseExistingServer: !process.env.CI,
+    env: {
+      DATABASE_PATH: testDatabasePath,
+    },
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });
