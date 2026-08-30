@@ -139,7 +139,7 @@ export function ReviewForm({ recipe }: { recipe: HomeownerRecipeView }) {
         <div className={styles.formGrid}>
           <div className={styles.fieldGroup}>
             <label htmlFor="review-title">Recipe title</label>
-            <input id="review-title" value={title} onChange={(event) => setTitle(event.target.value)} maxLength={300} required />
+            <input id="review-title" value={title} onChange={(event) => setTitle(event.target.value)} required />
           </div>
           <div className={styles.fieldGroup}>
             <label htmlFor="review-servings">Servings</label>
@@ -288,7 +288,7 @@ export function ReviewForm({ recipe }: { recipe: HomeownerRecipeView }) {
               <div className={styles.formGrid}>
                 <div className={styles.fieldGroup}>
                   <label htmlFor={`step-short-${index}`}>Short action</label>
-                  <input id={`step-short-${index}`} value={step.shortText} onChange={(event) => changeStep(index, { shortText: event.target.value })} maxLength={280} required />
+                  <input id={`step-short-${index}`} value={step.shortText} onChange={(event) => changeStep(index, { shortText: event.target.value })} required />
                 </div>
                 <div className={styles.visualMeta}>
                   <span aria-hidden="true">◇</span>

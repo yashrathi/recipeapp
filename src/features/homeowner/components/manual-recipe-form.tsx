@@ -46,7 +46,7 @@ export function ManualRecipeForm() {
       <div className={styles.formGrid}>
         <div className={styles.fieldGroup}>
           <label htmlFor="manual-title">Recipe title</label>
-          <input id="manual-title" name="title" maxLength={300} required />
+          <input id="manual-title" name="title" required />
         </div>
         <div className={styles.fieldGroup}>
           <label htmlFor="manual-servings">Servings</label>

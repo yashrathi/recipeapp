@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   AudioReadinessSchema,
+  CookingAssignmentSchema,
   ExtractionWarningSchema,
   RecipeVersionSchema,
   SpokenGuidanceSchema,
@@ -64,6 +65,62 @@ const publishedRecipe = {
 describe("domain contracts", () => {
   it("accepts a source-aware reviewed recipe version", () => {
     expect(RecipeVersionSchema.parse(publishedRecipe).title).toBe("Palak");
+  });
+
+  it("accepts nonblank persisted recipe, spoken, and assignment text without per-field character caps", () => {
+    const longText = `Detailed homeowner guidance. ${"Continue with the reviewed instruction. ".repeat(180)}`.trim();
+    const recipe = RecipeVersionSchema.parse({
+      ...publishedRecipe,
+      title: longText,
+      ingredients: [{
+        ...publishedRecipe.ingredients[0],
+        originalText: longText,
+        displayText: longText,
+        displayLine: longText,
+        ingredientText: longText,
+        preparationNote: longText,
+      }],
+      steps: [{
+        ...publishedRecipe.steps[0],
+        section: longText,
+        originalText: longText,
+        displayText: longText,
+        shortText: longText,
+        detailedText: longText,
+      }],
+    });
+    expect(recipe.steps[0]?.shortText).toBe(longText);
+
+    expect(SpokenGuidanceSchema.parse({
+      id: "speech-long",
+      recipeVersionId: "version-1",
+      guidanceKey: "cook.step.long",
+      stepId: "add-spinach",
+      locale: "en-IN",
+      speakableText: longText,
+      contentHash: CONTENT_HASH,
+      voiceVersion: "fixture-v1",
+      reviewStatus: "reviewed",
+      audioAssetId: null,
+      cacheStatus: "not_cached",
+    }).speakableText).toBe(longText);
+
+    expect(CookingAssignmentSchema.parse({
+      id: "assignment-long",
+      householdId: "household-1",
+      recipeVersionId: "version-1",
+      assigneeId: "househelp-1",
+      createdBy: "homeowner-1",
+      scheduledDate: "2026-09-01",
+      mealSlot: "dinner",
+      targetTime: null,
+      targetServings: 2,
+      selectedLocale: "en-IN",
+      notes: longText,
+      status: "scheduled",
+      createdAt: "2026-08-30T10:00:00.000+05:30",
+      updatedAt: "2026-08-30T10:00:00.000+05:30",
+    }).notes).toBe(longText);
   });
 
   it("rejects published content without review metadata", () => {
