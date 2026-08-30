@@ -42,7 +42,14 @@ interface LocalEnvelope {
   pending: PendingMutation[];
 }
 
+declare global {
+  interface Window {
+    __HOUSEHELP_PERSISTENCE_TIMEOUT_MS__?: number;
+  }
+}
+
 const STORAGE_PREFIX = "recipe-app:househelp:v1:";
+const DEFAULT_PERSISTENCE_TIMEOUT_MS = 5_000;
 
 function storageKey(assignmentId: string) {
   return `${STORAGE_PREFIX}${assignmentId}`;
@@ -105,6 +112,24 @@ function saveLocalEnvelope(
 
 function advancesRevision(effect: HousehelpPersistenceEffect) {
   return ["ingredient", "start_cooking", "step", "done"].includes(effect.type);
+}
+
+async function postProgressMutation(mutation: PendingMutation): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(
+    () => controller.abort(),
+    window.__HOUSEHELP_PERSISTENCE_TIMEOUT_MS__ ?? DEFAULT_PERSISTENCE_TIMEOUT_MS,
+  );
+  try {
+    return await fetch(mutation.url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(mutation.body),
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }
 
 function mutationBody(
@@ -228,11 +253,7 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
         pendingRef.current.push(pending);
       } else {
         try {
-          const response = await fetch(pending.url, {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify(pending.body),
-          });
+          const response = await postProgressMutation(pending);
           if (response.status === 404 || response.status === 410) return "revoked";
           if (!response.ok) {
             pendingRef.current.push(pending);
