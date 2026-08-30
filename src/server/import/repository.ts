@@ -124,20 +124,25 @@ export class ImportRepository {
           return "submitted webpage";
         }
       })();
+      const sourceType = result.source.sourceType;
+      const attribution = sourceType === "youtube"
+        ? `YouTube video: ${result.source.title?.displayText ?? result.source.videoId ?? "public video"}`
+        : `Public recipe webpage: ${sourceHost}`;
 
       this.client
         .prepare(
           `INSERT INTO recipe_sources
             (id, household_id, type, canonical_url, title, author, attribution, fetched_at)
-           VALUES (?, ?, 'web', ?, ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           sourceId,
           actor.householdId,
+          sourceType,
           result.source.contentSha256 ? result.source.canonicalUrl : null,
           result.source.title?.displayText ?? null,
           result.source.author?.displayText ?? result.source.publisher?.displayText ?? null,
-          `Public recipe webpage: ${sourceHost}`,
+          attribution,
           outcome.fetch?.fetchedAt ?? null,
         );
 

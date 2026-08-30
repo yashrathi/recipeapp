@@ -41,6 +41,15 @@ export type ImportFailureCode =
   | "FIRECRAWL_UNSUPPORTED_SOURCE"
   | "FIRECRAWL_RESPONSE_INVALID"
   | "FIRECRAWL_CONTENT_TOO_LARGE"
+  | "YOUTUBE_URL_UNSUPPORTED"
+  | "TRANSCRIPT_UNAVAILABLE"
+  | "OPENAI_NOT_CONFIGURED"
+  | "OPENAI_AUTH_FAILED"
+  | "OPENAI_RATE_LIMITED"
+  | "OPENAI_TIMEOUT"
+  | "OPENAI_UNAVAILABLE"
+  | "OPENAI_RESPONSE_INVALID"
+  | "OPENAI_INPUT_TOO_LARGE"
   | "IDEMPOTENCY_CONFLICT"
   | "IMPORT_INTERNAL_ERROR";
 
@@ -73,6 +82,15 @@ const failureMessages: Record<ImportFailureCode, string> = {
   FIRECRAWL_UNSUPPORTED_SOURCE: "This source does not permit automatic import. Enter the recipe manually.",
   FIRECRAWL_RESPONSE_INVALID: "Automatic fallback returned no usable recipe page. Enter the recipe manually.",
   FIRECRAWL_CONTENT_TOO_LARGE: "The fallback recipe page exceeded the import size limit. Enter the recipe manually.",
+  YOUTUBE_URL_UNSUPPORTED: "Enter one public YouTube video link (watch, share, or Shorts).",
+  TRANSCRIPT_UNAVAILABLE: "This video has no usable transcript. Enter the recipe manually.",
+  OPENAI_NOT_CONFIGURED: "AI-assisted extraction is not configured. Enter the recipe manually.",
+  OPENAI_AUTH_FAILED: "AI-assisted extraction is temporarily unavailable. Enter the recipe manually.",
+  OPENAI_RATE_LIMITED: "AI-assisted extraction is busy. Try again later or enter the recipe manually.",
+  OPENAI_TIMEOUT: "AI-assisted extraction took too long. Try again or enter the recipe manually.",
+  OPENAI_UNAVAILABLE: "AI-assisted extraction is temporarily unavailable. Try again or enter the recipe manually.",
+  OPENAI_RESPONSE_INVALID: "AI-assisted extraction returned no supported recipe evidence. Enter the recipe manually.",
+  OPENAI_INPUT_TOO_LARGE: "This source is too long for AI-assisted extraction. Enter the recipe manually.",
   IDEMPOTENCY_CONFLICT: "This import request key was already used for a different link.",
   IMPORT_INTERNAL_ERROR: "The recipe could not be imported because of an internal error.",
 };
@@ -107,7 +125,10 @@ export type ImportWarningCode =
   | "QUANTITY_MISSING"
   | "UNIT_UNRECOGNIZED"
   | "CORE_FIELD_MISSING"
-  | "CANONICAL_URL_IGNORED";
+  | "CANONICAL_URL_IGNORED"
+  | "AI_ASSISTED_EXTRACTION"
+  | "EVIDENCE_MISMATCH"
+  | "TRANSCRIPT_LANGUAGE_UNKNOWN";
 
 const warningDefinitions: Record<
   ImportWarningCode,
@@ -161,13 +182,26 @@ const warningDefinitions: Record<
     severity: "info",
     message: "The page's preferred source URL was ignored because it was not eligible.",
   },
+  AI_ASSISTED_EXTRACTION: {
+    severity: "info",
+    message: "This draft was prepared with AI and must be checked against the source evidence.",
+  },
+  EVIDENCE_MISMATCH: {
+    severity: "warning",
+    message: "An AI-suggested field was omitted because its source evidence did not match.",
+  },
+  TRANSCRIPT_LANGUAGE_UNKNOWN: {
+    severity: "warning",
+    message: "The transcript language was not reported and needs review.",
+  },
 };
 
 export interface ExtractionEvidence {
-  method: "json_ld" | "microdata";
+  method: "json_ld" | "microdata" | "openai";
   locator: string;
   sourceText: string;
   sourceTextSha256: string;
+  startSeconds?: number;
 }
 
 export interface ImportWarning {
@@ -279,6 +313,7 @@ export interface NormalizedRecipe {
 }
 
 export interface ImportSource {
+  sourceType: "web" | "youtube";
   requestedUrl: string;
   finalUrl: string;
   canonicalUrl: string;
@@ -286,8 +321,12 @@ export interface ImportSource {
   author: TextField | null;
   publisher: TextField | null;
   imageUrl: string | null;
-  method: "json_ld" | "microdata" | null;
+  method: "json_ld" | "microdata" | "openai" | null;
   retrievalProvider: "direct" | "firecrawl";
+  extractionProvider: "deterministic" | "openai" | null;
+  videoId: string | null;
+  transcriptLanguage: string | null;
+  transcriptHasTimestamps: boolean | null;
   contentSha256: string | null;
 }
 
@@ -329,6 +368,7 @@ export function importFailureResult(
     status: "failure",
     reviewState: "not_created",
     source: {
+      sourceType: source?.sourceType ?? "web",
       requestedUrl,
       finalUrl: source?.finalUrl ?? requestedUrl,
       canonicalUrl: source?.canonicalUrl ?? source?.finalUrl ?? requestedUrl,
@@ -338,6 +378,10 @@ export function importFailureResult(
       imageUrl: source?.imageUrl ?? null,
       method: source?.method ?? null,
       retrievalProvider: source?.retrievalProvider ?? "direct",
+      extractionProvider: source?.extractionProvider ?? null,
+      videoId: source?.videoId ?? null,
+      transcriptLanguage: source?.transcriptLanguage ?? null,
+      transcriptHasTimestamps: source?.transcriptHasTimestamps ?? null,
       contentSha256: source?.contentSha256 ?? null,
     },
     recipe: null,

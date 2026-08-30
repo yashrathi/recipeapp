@@ -90,7 +90,8 @@ test("homeowner imports, reviews, publishes and assigns a recipe", async ({ page
   await enterHomeowner(page);
 
   await page.getByRole("link", { name: "Add a recipe" }).first().click();
-  await page.getByLabel("Public recipe webpage URL").fill("https://recipes.example.test/palak-paneer");
+  await expect(page.getByText(/public YouTube watch, share, or Shorts link/)).toBeVisible();
+  await page.getByLabel("Public recipe webpage or YouTube URL").fill("https://recipes.example.test/palak-paneer");
   await page.getByRole("button", { name: "Import recipe" }).click();
 
   await expect(page).toHaveURL(/\/homeowner\/recipes\/[^/]+\/review$/);
@@ -152,7 +153,7 @@ test("import API failure keeps manual entry available", async ({ page }) => {
   });
   await enterHomeowner(page);
   await page.goto("/homeowner/recipes/new");
-  await page.getByLabel("Public recipe webpage URL").fill("https://recipes.example.test/unavailable");
+  await page.getByLabel("Public recipe webpage or YouTube URL").fill("https://recipes.example.test/unavailable");
   await page.getByRole("button", { name: "Import recipe" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "temporarily unavailable" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Enter manually" }).first()).toBeVisible();

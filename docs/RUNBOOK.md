@@ -39,6 +39,9 @@ Environment values:
 - `DATABASE_PATH`: SQLite file path, default `.data/recipe-app.sqlite`.
 - `FIRECRAWL_API_KEY`: optional server-only key used after an eligible public webpage passes URL safety checks but direct fetching or deterministic extraction cannot produce a usable page.
 - `FIRECRAWL_API_URL`: Firecrawl scrape endpoint, default `https://api.firecrawl.dev/v2/scrape`; keep the default outside controlled adapter tests.
+- `OPENAI_API_KEY`: optional server-only key for evidence-checked extraction from unstructured Firecrawl markdown and public YouTube transcripts. Never use a `NEXT_PUBLIC_` prefix.
+- `OPENAI_RECIPE_MODEL`: required with `OPENAI_API_KEY`; choose an available Responses API model that supports strict JSON Schema structured outputs. Model usage incurs provider cost.
+- `OPENAI_API_URL`: Responses endpoint, default `https://api.openai.com/v1/responses`; keep the default outside controlled adapter tests.
 
 Do not commit `.env.local`, database files, or real secrets. The committed `.env.example` contains placeholders only.
 
@@ -68,14 +71,16 @@ npm run test:e2e
 
 The E2E runner initializes deterministic data in a dedicated per-run `.data/playwright-<pid>.sqlite` database and starts its own development server on port `3100` by default. It never reuses the normal port-3000 server or database. Stop any active `next dev` process before starting the browser suite because Next.js permits only one development process per build directory. It intentionally uses one worker because the desktop and mobile projects share the isolated fixture. Set `PORT` or `PLAYWRIGHT_DATABASE_PATH` only when a controlled test environment requires an override. Two desktop cases are skipped because their cook-mode acceptance is deliberately phone-only. HTML reports are written to the ignored `playwright-report/` directory.
 
-Current verified baseline: 12 test files / 135 Vitest tests, a warning-free production build, and 10 passing Playwright cases across desktop/mobile with 2 intentional desktop skips.
+Current verified baseline: 17 test files / 179 Vitest tests, a warning-free production build, and 10 passing Playwright cases across desktop/mobile with 2 intentional desktop skips.
 
 ## Runtime checks
 
 - `GET /api/health` returns `200` with the latest applied migration when SQLite is ready.
 - A `503` response with `database: not_initialized` means `npm run db:setup` has not completed or the configured database cannot be opened.
 - If a demo session redirects back to `/`, confirm the seed exists and that the signed session's user, household, membership, and role still match an active membership.
-- If public webpage import fails, read the surfaced warning and use manual entry. The importer rejects private/loopback destinations, redirects outside policy, oversized/slow responses, unsupported media, and pages without trustworthy recipe evidence. When configured, Firecrawl is attempted only after the original URL passes the same public-address policy and direct retrieval or extraction cannot produce a usable recipe. Firecrawl requests disable provider retention and caching; its returned URL and bounded content are revalidated before extraction.
+- If webpage or YouTube import fails, read the surfaced warning and use manual entry. The importer rejects private/loopback destinations, redirects outside policy, oversized/slow responses, unsupported media, and sources without trustworthy recipe evidence. When configured, Firecrawl is attempted only after the original URL passes the same public-address policy and direct retrieval or extraction cannot produce a usable recipe. Firecrawl requests disable provider retention and caching; its returned URL and bounded content are revalidated before extraction. Allrecipes and other blocking/unsupported sources may still require manual entry.
+- YouTube watch, share, and Shorts links use Firecrawl's transcript markdown and do not need a YouTube Data API key. Missing captions/transcripts fail safely to manual entry. The app does not use Pick-a-Recipe code, `yt-dlp`, browser cookies, or downloaded/cached audio or video.
+- AI extraction makes one bounded Responses API call with `store: false`. The submitted bounded source text still crosses the OpenAI provider boundary and is subject to the deployment's OpenAI data controls and retention terms; `store: false` is not a zero-retention claim. Persisted jobs retain only the reviewed draft and bounded evidence excerpts, never the full page/transcript or raw provider errors.
 - If househelp audio is unavailable, use the on-screen audio recovery action and device settings. The local progress queue retries connectivity failures but deliberately retains rejected mutations for safe recovery instead of silently discarding them.
 - If production startup reports `SESSION_SECRET is required in production`, provide a secret through the hosting platform's secret manager; do not add a fallback to source control.
 

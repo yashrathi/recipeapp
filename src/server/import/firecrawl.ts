@@ -21,6 +21,7 @@ export interface FirecrawlOptions {
   resolver?: DnsResolver;
   transport?: FetchTransport;
   now?: () => number;
+  timeoutMs?: number;
 }
 
 interface FirecrawlPayload {
@@ -38,13 +39,25 @@ interface FirecrawlPayload {
   };
 }
 
-export interface FirecrawlFetchedPage extends FetchedPage {
+export interface FirecrawlScrapeResult {
+  requestedUrl: string;
+  finalUrl: string;
+  redirectCount: number;
+  fetchedAt: string;
+  contentSha256: string;
+  attemptCount: number;
+  rawHtml: string | null;
   markdown: string | null;
   metadata: {
     sourceUrl: string;
     title: string | null;
     language: string | null;
   };
+}
+
+export interface FirecrawlFetchedPage extends FetchedPage {
+  markdown: string | null;
+  metadata: FirecrawlScrapeResult["metadata"];
 }
 
 async function readBoundedText(response: Response): Promise<string> {
@@ -110,6 +123,7 @@ export class FirecrawlPageFetcher {
   private readonly resolver: DnsResolver;
   private readonly transport: FetchTransport;
   private readonly now: () => number;
+  private readonly timeoutMs: number;
 
   constructor(options: FirecrawlOptions = {}) {
     const environment = getEnvironment();
@@ -118,9 +132,10 @@ export class FirecrawlPageFetcher {
     this.resolver = options.resolver ?? new SystemDnsResolver();
     this.transport = options.transport ?? fetch;
     this.now = options.now ?? Date.now;
+    this.timeoutMs = options.timeoutMs ?? FIRECRAWL_LIMITS.timeoutMs;
   }
 
-  async fetch(requestedUrl: string, cancellation?: AbortSignal): Promise<FirecrawlFetchedPage> {
+  async scrape(requestedUrl: string, cancellation?: AbortSignal): Promise<FirecrawlScrapeResult> {
     if (!this.apiKey) {
       throw new ImportPipelineError("FIRECRAWL_NOT_CONFIGURED", "fetch", false);
     }
@@ -136,7 +151,7 @@ export class FirecrawlPageFetcher {
 
     const approved = await approveImportUrl(requestedUrl, this.resolver);
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), FIRECRAWL_LIMITS.timeoutMs);
+    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     const cancel = () => controller.abort(cancellation?.reason);
     cancellation?.addEventListener("abort", cancel, { once: true });
 
@@ -179,10 +194,13 @@ export class FirecrawlPageFetcher {
 
       const rawHtml = payload.data?.rawHtml;
       const markdown = payload.data?.markdown;
-      if (typeof rawHtml !== "string" || !rawHtml.trim()) {
+      if (
+        (typeof rawHtml !== "string" || !rawHtml.trim())
+        && (typeof markdown !== "string" || !markdown.trim())
+      ) {
         throw new ImportPipelineError("FIRECRAWL_RESPONSE_INVALID", "fetch", false);
       }
-      if (Buffer.byteLength(rawHtml, "utf8") > FIRECRAWL_LIMITS.rawHtmlBytes) {
+      if (typeof rawHtml === "string" && Buffer.byteLength(rawHtml, "utf8") > FIRECRAWL_LIMITS.rawHtmlBytes) {
         throw new ImportPipelineError("FIRECRAWL_CONTENT_TOO_LARGE", "fetch", false);
       }
       if (
@@ -213,12 +231,13 @@ export class FirecrawlPageFetcher {
         requestedUrl,
         finalUrl: approvedFinal.normalizedUrl,
         redirectCount: approved.normalizedUrl === approvedFinal.normalizedUrl ? 0 : 1,
-        responseMediaType: "text/html",
         fetchedAt: new Date(this.now()).toISOString(),
-        contentSha256: sha256(rawHtml),
-        html: rawHtml,
-        charsetReplacement: false,
+        contentSha256: sha256([
+          typeof rawHtml === "string" ? `${Buffer.byteLength(rawHtml, "utf8")}:${rawHtml}` : "0:",
+          typeof markdown === "string" ? `${Buffer.byteLength(markdown, "utf8")}:${markdown}` : "0:",
+        ].join("\n")),
         attemptCount: 1,
+        rawHtml: typeof rawHtml === "string" && rawHtml.trim() ? rawHtml : null,
         markdown: typeof markdown === "string" ? markdown : null,
         metadata: {
           sourceUrl: approvedFinal.normalizedUrl,
@@ -230,5 +249,25 @@ export class FirecrawlPageFetcher {
       clearTimeout(timeout);
       cancellation?.removeEventListener("abort", cancel);
     }
+  }
+
+  async fetch(requestedUrl: string, cancellation?: AbortSignal): Promise<FirecrawlFetchedPage> {
+    const scraped = await this.scrape(requestedUrl, cancellation);
+    if (!scraped.rawHtml) {
+      throw new ImportPipelineError("FIRECRAWL_RESPONSE_INVALID", "fetch", false);
+    }
+    return {
+      requestedUrl: scraped.requestedUrl,
+      finalUrl: scraped.finalUrl,
+      redirectCount: scraped.redirectCount,
+      responseMediaType: "text/html",
+      fetchedAt: scraped.fetchedAt,
+      contentSha256: scraped.contentSha256,
+      html: scraped.rawHtml,
+      charsetReplacement: false,
+      attemptCount: scraped.attemptCount,
+      markdown: scraped.markdown,
+      metadata: scraped.metadata,
+    };
   }
 }

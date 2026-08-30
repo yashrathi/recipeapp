@@ -9,6 +9,15 @@ const EnvironmentSchema = z.object({
     z.string().trim().min(1).optional(),
   ),
   FIRECRAWL_API_URL: z.url().default("https://api.firecrawl.dev/v2/scrape"),
+  OPENAI_API_KEY: z.preprocess(
+    (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.string().trim().min(1).optional(),
+  ),
+  OPENAI_RECIPE_MODEL: z.preprocess(
+    (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.string().trim().min(1).optional(),
+  ),
+  OPENAI_API_URL: z.url().default("https://api.openai.com/v1/responses"),
 });
 
 export type AppEnvironment = z.infer<typeof EnvironmentSchema>;

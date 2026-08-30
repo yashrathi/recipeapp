@@ -27,6 +27,21 @@ function firecrawlResponse(
 }
 
 describe("Firecrawl scrape adapter", () => {
+  it("accepts bounded transcript markdown without raw HTML and hashes markdown changes", async () => {
+    let markdown = "## Transcript\nAdd salt.";
+    const fetcher = new FirecrawlPageFetcher({
+      apiKey: "fixture-key", endpoint: "https://api.firecrawl.test/v2/scrape", resolver: publicResolver,
+      transport: async () => firecrawlResponse({ success: true, data: { markdown,
+        metadata: { sourceURL: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", language: "en" } } }),
+    });
+    const first = await fetcher.scrape("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+    markdown = "## Transcript\nAdd pepper.";
+    const second = await fetcher.scrape("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+    expect(first.rawHtml).toBeNull();
+    expect(first.markdown).toContain("Transcript");
+    expect(second.contentSha256).not.toBe(first.contentSha256);
+  });
+
   it("requests raw HTML and markdown without provider retention or caching", async () => {
     let requestUrl = "";
     let requestInit: RequestInit | undefined;
@@ -112,6 +127,16 @@ describe("Firecrawl scrape adapter", () => {
 
     await expect(fetcher.fetch("https://pinchofyum.com/fixture-recipe")).rejects.toMatchObject({
       failure: { code, retryable },
+    });
+  });
+
+  it("maps a bounded request timeout without exposing transport errors", async () => {
+    const fetcher = new FirecrawlPageFetcher({ apiKey: "fixture-key", endpoint: "https://api.firecrawl.test/v2/scrape",
+      resolver: publicResolver, timeoutMs: 2, transport: async (_url, init) => new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(new Error("private timeout")), { once: true });
+      }) });
+    await expect(fetcher.scrape("https://pinchofyum.com/fixture-recipe")).rejects.toMatchObject({
+      failure: { code: "FIRECRAWL_UNAVAILABLE", retryable: true },
     });
   });
 

@@ -173,6 +173,7 @@ function sourceAttribution(result: ImportedRecipeResult): string {
   const publisher = textFieldDisplay(result.source.publisher);
   if (author) return author;
   if (publisher) return publisher;
+  if (result.source.sourceType === "youtube") return `YouTube video: ${result.recipe.title.displayText}`;
   return `Imported from ${new URL(result.source.canonicalUrl).hostname}`;
 }
 
@@ -395,10 +396,11 @@ export class HomeownerStore {
         this.client.prepare(
           `INSERT INTO recipe_sources
              (id, household_id, type, canonical_url, title, author, attribution, fetched_at)
-           VALUES (?, ?, 'web', ?, ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         ).run(
           sourceId,
           actor.householdId,
+          result.source.sourceType ?? "web",
           result.source.canonicalUrl,
           result.recipe.title.displayText,
           textFieldDisplay(result.source.author),

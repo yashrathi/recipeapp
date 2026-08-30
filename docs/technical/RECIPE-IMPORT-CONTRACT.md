@@ -10,7 +10,7 @@ This document defines the security and extraction boundary between an import job
 
 ## 1. Non-goals
 
-The direct importer does not use a browser, execute page JavaScript, sign in, accept cookies, bypass a paywall, call an AI model, infer a recipe from arbitrary prose, download images, or follow links other than bounded HTTP redirects. After public-address approval, a configured Firecrawl adapter may return rendered raw HTML for the same deterministic extraction rules. This slice does not import YouTube URLs. It never invents a missing quantity, unit, ingredient, step, time, serving count, author, or image.
+The direct importer does not use a browser, execute page JavaScript, sign in, accept cookies, bypass a paywall, download images, or follow links other than bounded HTTP redirects. After public-address approval, a configured Firecrawl adapter may return rendered raw HTML/markdown. Deterministic Schema.org extraction remains first. When deterministic extraction is unusable, one bounded OpenAI Responses call may prepare an evidence-checked draft from Firecrawl markdown. Public YouTube watch, share, and Shorts links use Firecrawl transcript markdown followed by the same evidence-checked extraction. The importer never invents a missing quantity, unit, ingredient, step, time, serving count, author, image, nutrition, or allergen.
 
 ## 2. Pipeline and trust boundaries
 
@@ -26,6 +26,8 @@ Run these stages in order:
 8. `classify`: return `success`, `partial_success`, or `failure`; every non-failure result is a draft in `needs_review`.
 
 If direct retrieval fails with an eligible fetch/decode error, or deterministic extraction finds no supported recipe, the pipeline may make one bounded Firecrawl scrape request and then repeat the same extraction and classification stages over returned raw HTML. URL-policy failures and unsafe redirects never cross the provider boundary.
+
+For an approved YouTube single-video URL, canonicalize the video ID to `https://www.youtube.com/watch?v=…`, request Firecrawl once, and isolate only a non-empty `## Transcript` section. Preserve timestamps only when they are explicit in provider text. No YouTube Data API key, audio/video download, `yt-dlp`, browser cookies, or Pick-a-Recipe code is used. Missing transcript evidence returns `TRANSCRIPT_UNAVAILABLE`.
 
 Untrusted input includes the submitted URL, DNS answers, redirect targets, headers, body bytes, HTML, metadata URLs, and all extracted text. Never place extracted markup into the UI without normal escaping. Network policy must also be enforced at the deployment/egress layer; application checks are defense in depth, not a substitute.
 
@@ -91,6 +93,15 @@ The source-policy layer may reject a site before fetching based on documented pr
 - Re-run URL and public-address approval for a provider-reported final/source URL. Reject an HTTPS-to-HTTP downgrade and never trust unsafe provider metadata.
 - Do not persist raw provider error bodies. Map provider configuration, authentication, throttling, availability, unsupported-source, invalid-response, and size errors to the stable taxonomy below.
 - Firecrawl is a retrieval fallback, not permission to bypass authentication, cookies, paywalls, source restrictions, or site/platform terms.
+
+### 3.5 OpenAI evidence extraction
+
+- Use the Responses API with a configurable model, strict `text.format` JSON Schema, `store: false`, bounded input/output, one call, and a 30-second timeout.
+- Treat retrieved source text as untrusted data and explicitly instruct the model to ignore instructions inside it.
+- Every accepted field requires an exact excerpt and locator. Verify the locator and excerpt programmatically against the supplied lines; omit mismatches and mark a usable affected draft `partial_success`.
+- Unknown values remain null/empty. Do not infer nutrition, allergens, servings, quantities, or times without explicit evidence.
+- Persist only normalized draft fields, review state, confidence, and bounded excerpts. Do not persist full markdown/transcripts or provider error bodies.
+- `store: false` disables retrievable response storage; it is not a claim of zero retention. Deployment owners must evaluate OpenAI data controls and model cost.
 
 ## 4. Structured extraction
 
@@ -315,6 +326,15 @@ If both core lists are missing, fail `UNSUPPORTED_RECIPE_PAGE` even when a title
 | `FIRECRAWL_UNSUPPORTED_SOURCE` | fetch | no | `This source does not permit automatic import. Enter the recipe manually.` |
 | `FIRECRAWL_RESPONSE_INVALID` | fetch or extract | no | `Automatic fallback returned no usable recipe page. Enter the recipe manually.` |
 | `FIRECRAWL_CONTENT_TOO_LARGE` | fetch | no | `The fallback recipe page exceeded the import size limit. Enter the recipe manually.` |
+| `YOUTUBE_URL_UNSUPPORTED` | validate_url | no | `Enter one public YouTube video link (watch, share, or Shorts).` |
+| `TRANSCRIPT_UNAVAILABLE` | extract | no | `This video has no usable transcript. Enter the recipe manually.` |
+| `OPENAI_NOT_CONFIGURED` | extract | no | `AI-assisted extraction is not configured. Enter the recipe manually.` |
+| `OPENAI_AUTH_FAILED` | extract | no | `AI-assisted extraction is temporarily unavailable. Enter the recipe manually.` |
+| `OPENAI_RATE_LIMITED` | extract | yes | `AI-assisted extraction is busy. Try again later or enter the recipe manually.` |
+| `OPENAI_TIMEOUT` | extract | yes | `AI-assisted extraction took too long. Try again or enter the recipe manually.` |
+| `OPENAI_UNAVAILABLE` | extract | yes | `AI-assisted extraction is temporarily unavailable. Try again or enter the recipe manually.` |
+| `OPENAI_RESPONSE_INVALID` | extract | no | `AI-assisted extraction returned no supported recipe evidence. Enter the recipe manually.` |
+| `OPENAI_INPUT_TOO_LARGE` | extract | no | `This source is too long for AI-assisted extraction. Enter the recipe manually.` |
 | `IDEMPOTENCY_CONFLICT` | persist | no | `This import request key was already used for a different link.` |
 | `IMPORT_INTERNAL_ERROR` | any | yes | `The recipe could not be imported because of an internal error.` |
 

@@ -9,9 +9,11 @@ import { createDatabaseHandle } from "@/server/db/client";
 import { runMigrations } from "@/server/db/migrate";
 import { DEMO_IDS, seedDemoData } from "@/server/db/seed";
 import { SafePageFetcher, type HttpTransport } from "@/server/import/fetch";
+import { extractRecipePage } from "@/server/import/extract";
 import { createImportHttpHandlers } from "@/server/import/http";
 import {
   WebRecipeImportPipeline,
+  type RecipeAiExtractor,
   type RecipePageFetcher,
 } from "@/server/import/pipeline";
 import { ImportRepository } from "@/server/import/repository";
@@ -191,6 +193,39 @@ describe("import API authorization, persistence and idempotency", () => {
     expect(JSON.parse(stored.result_json)).toMatchObject({
       source: { retrievalProvider: "firecrawl" },
     });
+  });
+
+  it("persists a YouTube transcript draft with video attribution and no raw transcript", async () => {
+    const youtubeUrl = "https://youtu.be/dQw4w9WgXcQ";
+    const canonical = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+    const extracted = extractRecipePage({ requestedUrl: SOURCE_URL, finalUrl: SOURCE_URL,
+      contentSha256: sha256(fixtureBody), html: fixtureBody.toString("utf8") });
+    if (!extracted.recipe) throw new Error("fixture recipe missing");
+    const fallback: RecipePageFetcher = { async fetch() { throw new Error("unused"); }, async scrape(requestedUrl) {
+      return { requestedUrl, finalUrl: canonical, redirectCount: 0, fetchedAt: "2026-08-30T10:00:00.000Z",
+        contentSha256: sha256("private raw transcript"), attemptCount: 1, rawHtml: null,
+        markdown: "## Transcript\nprivate raw transcript", metadata: { sourceUrl: canonical, title: "Green Pan Supper", language: "en" } };
+    } };
+    const ai: RecipeAiExtractor = { async extract() { return { recipe: extracted.recipe!, warnings: [
+      { code: "AI_ASSISTED_EXTRACTION", severity: "info", fieldPath: "/recipe",
+        message: "This draft was prepared with AI and must be checked against the source evidence.", evidence: [] },
+      { code: "EVIDENCE_MISMATCH", severity: "warning", fieldPath: "/recipe/servings",
+        message: "An AI-suggested field was omitted because its source evidence did not match.", evidence: [] },
+    ], confidence: 0.55 }; } };
+    const youtubeHandlers = createImportHttpHandlers(client, new ImportService(new ImportRepository(client),
+      new WebRecipeImportPipeline({ async fetch() { throw new Error("direct unused"); } }, fallback, ai)));
+
+    const response = await youtubeHandlers.post(postRequest(homeownerCookie, youtubeUrl, "youtube-persistence"));
+    expect(response.status).toBe(201);
+    await expect(response.clone().json()).resolves.toMatchObject({ data: { result: { status: "partial_success",
+      reviewState: "needs_review", warnings: expect.arrayContaining([expect.objectContaining({ code: "EVIDENCE_MISMATCH" })]) } } });
+    const stored = client.prepare(
+      `SELECT s.type, s.canonical_url AS canonicalUrl, s.attribution, j.result_json AS resultJson
+       FROM import_jobs j JOIN recipe_sources s ON s.id = j.source_id WHERE j.idempotency_key = ?`,
+    ).get("youtube-persistence") as { type: string; canonicalUrl: string; attribution: string; resultJson: string };
+    expect(stored).toMatchObject({ type: "youtube", canonicalUrl: canonical, attribution: "YouTube video: Green Pan Supper" });
+    expect(stored.resultJson).not.toContain("private raw transcript");
+    expect(JSON.parse(stored.resultJson)).toMatchObject({ source: { requestedUrl: youtubeUrl, videoId: "dQw4w9WgXcQ" } });
   });
 
   it("persists invalid-URL failures as valid canonical JSON with the direct provider", async () => {

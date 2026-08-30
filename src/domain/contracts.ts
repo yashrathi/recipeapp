@@ -23,10 +23,11 @@ export const RecipeSourceSchema = z.object({
 export type RecipeSource = z.infer<typeof RecipeSourceSchema>;
 
 export const ExtractionEvidenceSchema = z.object({
-  method: z.enum(["json_ld", "microdata"]),
+  method: z.enum(["json_ld", "microdata", "openai"]),
   locator: z.string().trim().min(1).max(500),
   sourceText: z.string().max(240),
   sourceTextSha256: Sha256Schema,
+  startSeconds: z.number().int().nonnegative().optional(),
 });
 export type ExtractionEvidence = z.infer<typeof ExtractionEvidenceSchema>;
 
@@ -43,6 +44,9 @@ export const ExtractionWarningCodeSchema = z.enum([
   "UNIT_UNRECOGNIZED",
   "CORE_FIELD_MISSING",
   "CANONICAL_URL_IGNORED",
+  "AI_ASSISTED_EXTRACTION",
+  "EVIDENCE_MISMATCH",
+  "TRANSCRIPT_LANGUAGE_UNKNOWN",
 ]);
 
 const WarningSeverityByCode = {
@@ -58,6 +62,9 @@ const WarningSeverityByCode = {
   UNIT_UNRECOGNIZED: "warning",
   CORE_FIELD_MISSING: "error",
   CANONICAL_URL_IGNORED: "info",
+  AI_ASSISTED_EXTRACTION: "info",
+  EVIDENCE_MISMATCH: "warning",
+  TRANSCRIPT_LANGUAGE_UNKNOWN: "warning",
 } as const;
 
 export const ExtractionWarningSchema = z

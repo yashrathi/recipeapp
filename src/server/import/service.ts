@@ -5,7 +5,7 @@ import {
 import type { HouseholdActor } from "@/server/auth/policy";
 import type { PipelineOutcome } from "@/server/import/pipeline";
 import type { ImportRepository, PersistedImport } from "@/server/import/repository";
-import { validateImportUrl } from "@/server/import/url-policy";
+import { parsePublicImportSource } from "@/server/import/source";
 
 export interface StartImportInput {
   url: string;
@@ -35,7 +35,7 @@ export class ImportService {
     let normalizedRequestUrl: string;
     let validationFailure: PipelineOutcome | null = null;
     try {
-      normalizedRequestUrl = validateImportUrl(input.url).href;
+      normalizedRequestUrl = parsePublicImportSource(input.url).normalizedUrl;
     } catch (error) {
       normalizedRequestUrl = input.url;
       const failure =
@@ -57,7 +57,7 @@ export class ImportService {
       return { record: existing, reused: true };
     }
 
-    const outcome = validationFailure ?? (await this.pipeline.run(normalizedRequestUrl, cancellation));
+    const outcome = validationFailure ?? (await this.pipeline.run(input.url, cancellation));
     return this.repository.persist(
       actor,
       input.idempotencyKey,

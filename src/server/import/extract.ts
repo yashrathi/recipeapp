@@ -791,6 +791,7 @@ export function extractRecipePage(input: ExtractPageInput): ImportResult {
     status,
     reviewState: "needs_review",
     source: {
+      sourceType: "web",
       requestedUrl: input.requestedUrl,
       finalUrl: input.finalUrl,
       canonicalUrl,
@@ -800,6 +801,10 @@ export function extractRecipePage(input: ExtractPageInput): ImportResult {
       imageUrl: image?.value ?? null,
       method: candidate.method,
       retrievalProvider: input.retrievalProvider ?? "direct",
+      extractionProvider: "deterministic",
+      videoId: null,
+      transcriptLanguage: null,
+      transcriptHasTimestamps: null,
       contentSha256: input.contentSha256,
     },
     recipe,

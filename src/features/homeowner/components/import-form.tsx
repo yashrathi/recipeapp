@@ -71,18 +71,18 @@ export function ImportForm() {
   return (
     <form className={styles.formCard} action={submit}>
       <div className={styles.fieldGroup}>
-        <label htmlFor="recipe-url">Public recipe webpage URL</label>
+        <label htmlFor="recipe-url">Public recipe webpage or YouTube URL</label>
         <input
           id="recipe-url"
           name="url"
           type="url"
           inputMode="url"
           autoComplete="url"
-          placeholder="https://example.com/recipe"
+          placeholder="https://example.com/recipe or youtube.com/watch?v=…"
           required
         />
         <p className={styles.fieldHint}>
-          Public HTML recipe pages only in this milestone. We never invent missing recipe content.
+          Paste one public recipe page or a public YouTube watch, share, or Shorts link. AI-assisted drafts are evidence-checked and always require your review.
         </p>
       </div>
       {error ? (

@@ -12,8 +12,8 @@ const stageLabels: Record<string, string> = {
   queued: "Waiting to start",
   validate_url: "Checking the link",
   resolving: "Checking the public source",
-  fetching: "Reading the webpage",
-  extracting: "Finding ingredients and steps",
+  fetching: "Reading the recipe source",
+  extracting: "Finding evidence for ingredients and steps",
   needs_review: "Ready for your review",
   ready: "Ready for your review",
   pending: "Waiting to start",
@@ -80,7 +80,7 @@ export function ImportProgress({ jobId }: { jobId: string }) {
     );
   }
 
-  const stages = ["Checking the link", "Reading the webpage", "Finding ingredients and steps", "Ready for your review"];
+  const stages = ["Checking the link", "Reading the source", "Finding evidence", "Ready for your review"];
   const currentLabel = stageLabels[stage] ?? "Preparing the recipe";
   return (
     <section className={styles.progressCard} aria-labelledby="progress-heading" aria-live="polite">
