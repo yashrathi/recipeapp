@@ -28,7 +28,7 @@ All accepted Milestone 1, Milestone 2, automatic-Hindi, and househelp-flow work 
 - Visuals are deliberately light: bundled focal state/action illustrations have accessible equivalents, while spoken guidance remains authoritative.
 - Combined `npm run verify` passes lint, strict TypeScript, 19 files / 199 tests, and the production build. Playwright passes 14 desktop/mobile cases with 4 intentional desktop skips, including automatic Hindi, one-time language handoff, menu browsing, assignment-free cooking, homeowner denial, active-task escape, stalled completion speech, and offline progress behavior.
 - The exact Pinch-of-Yum page succeeds through both repaired direct fetch and forced Firecrawl fallback with deterministic extraction (12 ingredients, 7 steps). A live captioned YouTube recipe succeeds through Firecrawl transcript retrieval and OpenAI evidence extraction as `partial_success` (3 evidenced ingredients, 12 steps, language recorded, no timestamps fabricated). Credentials and raw source/transcript text were not printed or persisted by the smoke harness.
-- The private GitHub repository is `https://github.com/yashrathi/recipeapp.git` with default branch `main`; the automatic-Hindi and househelp-flow integrations are currently local and have not been pushed.
+- The private GitHub repository is `https://github.com/yashrathi/recipeapp.git` with default branch `main`; the integrated work and Ghormai branding commit `b789671` are pushed and synchronized with `origin/main`.
 
 ## Blockers
 
