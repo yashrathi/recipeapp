@@ -3,7 +3,9 @@ import { z } from "zod";
 export const IdentifierSchema = z.string().trim().min(1).max(128);
 export const IsoDateTimeSchema = z.string().datetime({ offset: true });
 export const LocaleSchema = z.string().regex(/^[a-z]{2,3}(?:-[A-Z]{2})?$/);
+export const MilestoneOneSpokenLocaleSchema = z.enum(["en-IN", "hi-IN"]);
 export const ConfidenceSchema = z.number().min(0).max(1);
+export const Sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);
 
 export const HouseholdRoleSchema = z.enum(["homeowner", "househelp"]);
 export type HouseholdRole = z.infer<typeof HouseholdRoleSchema>;
@@ -20,18 +22,61 @@ export const RecipeSourceSchema = z.object({
 });
 export type RecipeSource = z.infer<typeof RecipeSourceSchema>;
 
-export const ExtractionWarningSchema = z.object({
-  fieldPath: z.string().trim().min(1),
-  category: z.enum([
-    "missing",
-    "ambiguous",
-    "unsupported",
-    "source_conflict",
-  ]),
-  severity: z.enum(["info", "warning", "blocking"]),
-  message: z.string().trim().min(1).max(500),
-  resolved: z.boolean(),
+export const ExtractionEvidenceSchema = z.object({
+  method: z.enum(["json_ld", "microdata"]),
+  locator: z.string().trim().min(1).max(500),
+  sourceText: z.string().max(240),
+  sourceTextSha256: Sha256Schema,
 });
+export type ExtractionEvidence = z.infer<typeof ExtractionEvidenceSchema>;
+
+export const ExtractionWarningCodeSchema = z.enum([
+  "SOURCE_USES_HTTP",
+  "CHARSET_REPLACEMENT",
+  "STRUCTURED_DATA_LIMIT_EXCEEDED",
+  "JSON_LD_MALFORMED",
+  "MULTIPLE_RECIPE_CANDIDATES",
+  "INGREDIENT_ENTRY_UNSUPPORTED",
+  "DURATION_UNPARSED",
+  "TEXT_LIMIT_EXCEEDED",
+  "QUANTITY_MISSING",
+  "UNIT_UNRECOGNIZED",
+  "CORE_FIELD_MISSING",
+  "CANONICAL_URL_IGNORED",
+]);
+
+const WarningSeverityByCode = {
+  SOURCE_USES_HTTP: "warning",
+  CHARSET_REPLACEMENT: "warning",
+  STRUCTURED_DATA_LIMIT_EXCEEDED: "warning",
+  JSON_LD_MALFORMED: "warning",
+  MULTIPLE_RECIPE_CANDIDATES: "warning",
+  INGREDIENT_ENTRY_UNSUPPORTED: "warning",
+  DURATION_UNPARSED: "warning",
+  TEXT_LIMIT_EXCEEDED: "error",
+  QUANTITY_MISSING: "warning",
+  UNIT_UNRECOGNIZED: "warning",
+  CORE_FIELD_MISSING: "error",
+  CANONICAL_URL_IGNORED: "info",
+} as const;
+
+export const ExtractionWarningSchema = z
+  .object({
+    code: ExtractionWarningCodeSchema,
+    severity: z.enum(["info", "warning", "error"]),
+    fieldPath: z.string().startsWith("/").max(500),
+    message: z.string().trim().min(1).max(500),
+    evidence: z.array(ExtractionEvidenceSchema),
+  })
+  .superRefine((warning, context) => {
+    if (warning.severity !== WarningSeverityByCode[warning.code]) {
+      context.addIssue({
+        code: "custom",
+        path: ["severity"],
+        message: `${warning.code} must use ${WarningSeverityByCode[warning.code]} severity.`,
+      });
+    }
+  });
 
 export const ImportJobSchema = z.object({
   id: IdentifierSchema,
@@ -43,29 +88,96 @@ export const ImportJobSchema = z.object({
   attemptCount: z.number().int().min(0),
   errorCode: z.string().trim().min(1).max(100).nullable(),
   warnings: z.array(ExtractionWarningSchema),
+  contractVersion: z.literal("web-recipe-import/v1"),
   extractorVersion: z.string().trim().min(1),
   createdAt: IsoDateTimeSchema,
   updatedAt: IsoDateTimeSchema,
 });
 export type ImportJob = z.infer<typeof ImportJobSchema>;
 
+const CanonicalDecimalSchema = z
+  .string()
+  .regex(/^(?:0|[1-9]\d*)(?:\.\d+)?$/)
+  .refine((value) => !/^0(?:\.0+)?$/.test(value), "Quantity must be greater than zero.");
+
+const DecimalQuantityValueSchema = z.object({ decimal: CanonicalDecimalSchema });
+const FractionQuantityValueSchema = z.object({
+  numerator: z.number().int().safe().positive(),
+  denominator: z.number().int().safe().positive(),
+});
+export const ExactQuantityValueSchema = z.union([
+  DecimalQuantityValueSchema,
+  FractionQuantityValueSchema,
+]);
+
+export const NormalizedQuantitySchema = z.union([
+  z.object({
+    kind: z.literal("exact"),
+    decimal: CanonicalDecimalSchema,
+    sourceText: z.string().trim().min(1).max(100),
+    confidence: ConfidenceSchema,
+  }),
+  z.object({
+    kind: z.literal("exact"),
+    numerator: z.number().int().safe().positive(),
+    denominator: z.number().int().safe().positive(),
+    sourceText: z.string().trim().min(1).max(100),
+    confidence: ConfidenceSchema,
+  }),
+  z.object({
+    kind: z.literal("range"),
+    min: ExactQuantityValueSchema,
+    max: ExactQuantityValueSchema,
+    sourceText: z.string().trim().min(1).max(100),
+    confidence: ConfidenceSchema,
+  }),
+]);
+export type NormalizedQuantity = z.infer<typeof NormalizedQuantitySchema>;
+
+export const NormalizedUnitSchema = z.object({
+  canonical: z.enum([
+    "teaspoon",
+    "tablespoon",
+    "cup",
+    "milliliter",
+    "liter",
+    "gram",
+    "kilogram",
+    "ounce",
+    "pound",
+    "piece",
+    "clove",
+    "can",
+    "pinch",
+    "bunch",
+  ]),
+  sourceText: z.string().trim().min(1).max(100),
+  confidence: ConfidenceSchema,
+});
+
 export const RecipeIngredientSchema = z.object({
   id: IdentifierSchema,
-  displayLine: z.string().trim().min(1).max(500),
+  originalText: z.string().min(1).max(1000),
+  displayText: z.string().trim().min(1).max(1000),
+  displayLine: z.string().trim().min(1).max(1000),
+  ingredientText: z.string().trim().min(1).max(1000),
   canonicalName: z.string().trim().min(1).max(200).nullable(),
-  quantity: z.number().positive().nullable(),
-  unit: z.string().trim().min(1).max(50).nullable(),
-  preparationNote: z.string().trim().max(200).nullable(),
+  quantity: NormalizedQuantitySchema.nullable(),
+  unit: NormalizedUnitSchema.nullable(),
+  preparationNote: z.string().trim().max(1000).nullable(),
   optional: z.boolean(),
-  order: z.number().int().nonnegative(),
+  order: z.number().int().positive(),
   confidence: ConfidenceSchema,
-  evidence: z.string().trim().max(1000).nullable(),
+  evidence: z.array(ExtractionEvidenceSchema),
 });
 export type RecipeIngredient = z.infer<typeof RecipeIngredientSchema>;
 
 export const RecipeStepSchema = z.object({
   id: IdentifierSchema,
-  order: z.number().int().nonnegative(),
+  order: z.number().int().positive(),
+  section: z.string().trim().min(1).max(300).nullable(),
+  originalText: z.string().min(1).max(5000),
+  displayText: z.string().trim().min(1).max(5000),
   shortText: z.string().trim().min(1).max(280),
   detailedText: z.string().trim().min(1).max(2000),
   action: z.string().trim().min(1).max(80).nullable(),
@@ -73,7 +185,7 @@ export const RecipeStepSchema = z.object({
   temperatureCelsius: z.number().int().min(0).max(500).nullable(),
   ingredientIds: z.array(IdentifierSchema),
   confidence: ConfidenceSchema,
-  evidence: z.string().trim().max(1000).nullable(),
+  evidence: z.array(ExtractionEvidenceSchema),
 });
 export type RecipeStep = z.infer<typeof RecipeStepSchema>;
 
@@ -92,12 +204,20 @@ export const RecipeVersionSchema = z
     reviewStatus: z.enum(["draft", "needs_review", "reviewed", "published"]),
     reviewedBy: IdentifierSchema.nullable(),
     publishedAt: IsoDateTimeSchema.nullable(),
-    ingredients: z.array(RecipeIngredientSchema).min(1),
-    steps: z.array(RecipeStepSchema).min(1),
+    ingredients: z.array(RecipeIngredientSchema),
+    steps: z.array(RecipeStepSchema),
   })
   .superRefine((recipe, context) => {
     const ingredientIds = new Set(recipe.ingredients.map(({ id }) => id));
     const duplicateOrder = (orders: number[]) => new Set(orders).size !== orders.length;
+
+    if (recipe.ingredients.length === 0 && recipe.steps.length === 0) {
+      context.addIssue({
+        code: "custom",
+        path: ["ingredients"],
+        message: "A recipe draft requires ingredients or cooking steps.",
+      });
+    }
 
     if (duplicateOrder(recipe.ingredients.map(({ order }) => order))) {
       context.addIssue({
@@ -124,12 +244,21 @@ export const RecipeVersionSchema = z
         }
       });
     });
-    if (recipe.reviewStatus === "published" && (!recipe.reviewedBy || !recipe.publishedAt)) {
-      context.addIssue({
-        code: "custom",
-        path: ["reviewStatus"],
-        message: "Published recipes require reviewer and publication metadata.",
-      });
+    if (recipe.reviewStatus === "published") {
+      if (recipe.ingredients.length === 0 || recipe.steps.length === 0) {
+        context.addIssue({
+          code: "custom",
+          path: ["reviewStatus"],
+          message: "Published recipes require both ingredients and cooking steps.",
+        });
+      }
+      if (!recipe.reviewedBy || !recipe.publishedAt) {
+        context.addIssue({
+          code: "custom",
+          path: ["reviewStatus"],
+          message: "Published recipes require reviewer and publication metadata.",
+        });
+      }
     }
   });
 export type RecipeVersion = z.infer<typeof RecipeVersionSchema>;
@@ -146,6 +275,7 @@ export const CookingAssignmentSchema = z.object({
   mealSlot: MealSlotSchema,
   targetTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
   targetServings: z.number().positive(),
+  selectedLocale: MilestoneOneSpokenLocaleSchema,
   notes: z.string().trim().max(1000).nullable(),
   status: z.enum([
     "scheduled",
@@ -165,33 +295,115 @@ export type CookingAssignment = z.infer<typeof CookingAssignmentSchema>;
 export const SpokenGuidanceSchema = z.object({
   id: IdentifierSchema,
   recipeVersionId: IdentifierSchema,
+  guidanceKey: z.string().trim().min(1).max(200),
   stepId: IdentifierSchema.nullable(),
-  interfaceKey: z.string().trim().min(1).max(100).nullable(),
-  locale: LocaleSchema,
+  locale: MilestoneOneSpokenLocaleSchema,
   speakableText: z.string().trim().min(1).max(2000),
+  contentHash: Sha256Schema,
   voiceVersion: z.string().trim().min(1),
-  generationStatus: z.enum(["pending", "ready", "failed"]),
-  cacheKey: z.string().trim().min(1).max(500).nullable(),
-  reviewed: z.boolean(),
+  reviewStatus: z.enum(["unreviewed", "reviewed"]),
+  audioAssetId: IdentifierSchema.nullable(),
+  cacheStatus: z.enum(["not_cached", "cached", "failed"]),
 });
 export type SpokenGuidance = z.infer<typeof SpokenGuidanceSchema>;
 
 export const VisualAssetSchema = z.object({
   id: IdentifierSchema,
-  type: z.enum(["photo", "icon", "illustration", "video", "embed"]),
+  kind: z.enum(["ingredient_photo", "step_image", "action_icon", "state_icon"]),
+  purpose: z.enum(["identify_ingredient", "show_result", "show_action", "show_state"]),
   sourceUrl: z.url().nullable(),
   owner: z.string().trim().min(1).max(200),
   attribution: z.string().trim().min(1).max(500),
-  rightsStatus: z.enum(["verified", "pending", "rejected"]),
-  altText: z.string().trim().min(1).max(500),
-  spokenDescription: z.string().trim().min(1).max(500),
-  verificationStatus: z.enum(["verified", "pending", "rejected"]),
+  verification: z.enum(["approved", "unreviewed", "expired", "rejected"]),
+  rights: z.enum([
+    "bundled",
+    "licensed",
+    "user_owned_confirmed",
+    "source_embed_allowed",
+    "unknown",
+    "prohibited",
+    "expired",
+  ]),
+  contentHash: Sha256Schema,
+  assetVersion: z.string().trim().min(1).max(100),
+  accessibleNameMessageId: z.string().trim().min(1).max(200).nullable(),
+  spokenDescriptionMessageId: z.string().trim().min(1).max(200).nullable(),
   reviewedBy: IdentifierSchema.nullable(),
 });
 export type VisualAsset = z.infer<typeof VisualAssetSchema>;
 
+const EligibleVisualRights = new Set<VisualAsset["rights"]>([
+  "bundled",
+  "licensed",
+  "user_owned_confirmed",
+  "source_embed_allowed",
+]);
+
+export function isVisualAssetEligible(asset: VisualAsset): boolean {
+  return asset.verification === "approved" && EligibleVisualRights.has(asset.rights);
+}
+
+export const AudioReadinessSchema = z
+  .object({
+    id: IdentifierSchema,
+    assignmentId: IdentifierSchema,
+    recipeVersionId: IdentifierSchema,
+    locale: MilestoneOneSpokenLocaleSchema,
+    snapshotContentHash: Sha256Schema,
+    status: z.enum([
+      "checking",
+      "ready_cached_audio",
+      "ready_device_tts",
+      "not_ready",
+    ]),
+    requiredGuidanceCount: z.number().int().nonnegative(),
+    cachedAudioCount: z.number().int().nonnegative(),
+    compatibleDeviceVoice: z.boolean(),
+    reviewedTextStored: z.boolean(),
+    recipeSnapshotStored: z.boolean(),
+    visualMetadataStored: z.boolean(),
+    checkedAt: IsoDateTimeSchema,
+    failureReason: z.string().trim().min(1).max(500).nullable(),
+  })
+  .superRefine((readiness, context) => {
+    if (readiness.cachedAudioCount > readiness.requiredGuidanceCount) {
+      context.addIssue({
+        code: "custom",
+        path: ["cachedAudioCount"],
+        message: "Cached audio count cannot exceed required guidance count.",
+      });
+    }
+
+    const snapshotReady =
+      readiness.reviewedTextStored &&
+      readiness.recipeSnapshotStored &&
+      readiness.visualMetadataStored;
+    if (
+      readiness.status === "ready_cached_audio" &&
+      (!snapshotReady || readiness.cachedAudioCount !== readiness.requiredGuidanceCount)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["status"],
+        message: "Cached-audio readiness requires the complete reviewed local snapshot.",
+      });
+    }
+    if (
+      readiness.status === "ready_device_tts" &&
+      (!snapshotReady || !readiness.compatibleDeviceVoice)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["status"],
+        message: "Device-TTS readiness requires reviewed local text and a compatible voice.",
+      });
+    }
+  });
+export type AudioReadiness = z.infer<typeof AudioReadinessSchema>;
+
 export const DomainContractSchemas = {
   assignment: CookingAssignmentSchema,
+  audioReadiness: AudioReadinessSchema,
   guidance: SpokenGuidanceSchema,
   importJob: ImportJobSchema,
   recipeSource: RecipeSourceSchema,

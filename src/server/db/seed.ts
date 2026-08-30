@@ -17,9 +17,13 @@ export const DEMO_IDS = {
   visual: "demo-visual-spinach-icon",
   recipeVisual: "demo-recipe-visual-spinach",
   assignment: "demo-assignment",
+  audioReadiness: "demo-audio-readiness-en-IN",
 } as const;
 
 const SEEDED_AT = "2026-08-30T06:00:00.000Z";
+const GUIDANCE_CONTENT_HASH = "139c8ed9b7487651eda0d4bf0ae2a87d4442095b27fdec936012bfc853f4d3c1";
+const VISUAL_CONTENT_HASH = "0433411e244c9497a5cd23101ae2349581298b28a5d6a964418473bda140f3cc";
+const SNAPSHOT_CONTENT_HASH = "b669a094fc9a87583a9fc1ba0820d0ea2b2e971daca238fd257a3ae0e27f5524";
 
 export function seedDemoData(client: Database.Database): void {
   client.transaction(() => {
@@ -161,54 +165,83 @@ export function seedDemoData(client: Database.Database): void {
 
     const ingredientStatement = client.prepare(
       `INSERT INTO recipe_ingredients
-        (id, recipe_version_id, display_line, canonical_name, quantity, unit, preparation_note,
-         optional, sort_order, confidence, evidence)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, recipe_version_id, display_line, original_text, display_text, ingredient_text,
+         canonical_name, quantity_json, unit_json, quantity, unit, preparation_note,
+         optional, sort_order, confidence, evidence_json, evidence)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          display_line = excluded.display_line,
+         original_text = excluded.original_text,
+         display_text = excluded.display_text,
+         ingredient_text = excluded.ingredient_text,
          canonical_name = excluded.canonical_name,
+         quantity_json = excluded.quantity_json,
+         unit_json = excluded.unit_json,
          quantity = excluded.quantity,
          unit = excluded.unit,
          preparation_note = excluded.preparation_note,
          optional = excluded.optional,
          sort_order = excluded.sort_order,
          confidence = excluded.confidence,
+         evidence_json = excluded.evidence_json,
          evidence = excluded.evidence`,
     );
     ingredientStatement.run(
       DEMO_IDS.ingredientSpinach,
       DEMO_IDS.recipeVersion,
-      "1 cup spinach, washed",
+      "1/2 cup spinach, washed",
+      "1/2 cup spinach, washed",
+      "1/2 cup spinach, washed",
       "spinach",
-      1,
-      "cup",
+      "spinach",
+      JSON.stringify({
+        kind: "exact",
+        numerator: 1,
+        denominator: 2,
+        sourceText: "1/2",
+        confidence: 1,
+      }),
+      JSON.stringify({ canonical: "cup", sourceText: "cup", confidence: 1 }),
+      null,
+      null,
       "washed",
       0,
-      0,
       1,
-      "Deterministic demo fixture",
+      1,
+      "[]",
+      null,
     );
     ingredientStatement.run(
       DEMO_IDS.ingredientOil,
       DEMO_IDS.recipeVersion,
       "1 teaspoon cooking oil",
+      "1 teaspoon cooking oil",
+      "1 teaspoon cooking oil",
       "cooking oil",
-      1,
-      "teaspoon",
+      "cooking oil",
+      JSON.stringify({ kind: "exact", decimal: "1", sourceText: "1", confidence: 1 }),
+      JSON.stringify({ canonical: "teaspoon", sourceText: "teaspoon", confidence: 1 }),
+      null,
+      null,
       null,
       0,
+      2,
       1,
-      1,
-      "Deterministic demo fixture",
+      "[]",
+      null,
     );
 
     const stepStatement = client.prepare(
       `INSERT INTO recipe_steps
-        (id, recipe_version_id, sort_order, short_text, detailed_text, action,
-         duration_seconds, temperature_celsius, ingredient_ids_json, confidence, evidence)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, recipe_version_id, sort_order, section, original_text, display_text, short_text,
+         detailed_text, action, duration_seconds, temperature_celsius, ingredient_ids_json,
+         confidence, evidence_json, evidence)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          sort_order = excluded.sort_order,
+         section = excluded.section,
+         original_text = excluded.original_text,
+         display_text = excluded.display_text,
          short_text = excluded.short_text,
          detailed_text = excluded.detailed_text,
          action = excluded.action,
@@ -216,12 +249,16 @@ export function seedDemoData(client: Database.Database): void {
          temperature_celsius = excluded.temperature_celsius,
          ingredient_ids_json = excluded.ingredient_ids_json,
          confidence = excluded.confidence,
+         evidence_json = excluded.evidence_json,
          evidence = excluded.evidence`,
     );
     stepStatement.run(
       DEMO_IDS.stepHeat,
       DEMO_IDS.recipeVersion,
-      0,
+      1,
+      null,
+      "Heat the oil.",
+      "Heat the oil.",
       "Heat the oil.",
       "Heat one teaspoon of cooking oil over medium heat.",
       "heat",
@@ -229,56 +266,81 @@ export function seedDemoData(client: Database.Database): void {
       null,
       JSON.stringify([DEMO_IDS.ingredientOil]),
       1,
-      "Deterministic demo fixture",
+      "[]",
+      null,
     );
     stepStatement.run(
       DEMO_IDS.stepAdd,
       DEMO_IDS.recipeVersion,
-      1,
+      2,
+      null,
+      "Now add half a cup of washed spinach and stir for two minutes.",
+      "Now add half a cup of washed spinach and stir for two minutes.",
       "Add the spinach.",
-      "Now add one cup of washed spinach and stir for two minutes.",
+      "Now add half a cup of washed spinach and stir for two minutes.",
       "add",
       120,
       null,
       JSON.stringify([DEMO_IDS.ingredientSpinach]),
       1,
-      "Deterministic demo fixture",
+      "[]",
+      null,
     );
 
     client.prepare(
       `INSERT INTO spoken_guidance
-        (id, recipe_version_id, step_id, interface_key, locale, speakable_text, voice_version,
+        (id, recipe_version_id, guidance_key, step_id, interface_key, locale, speakable_text,
+         content_hash, voice_version, review_status, audio_asset_id, cache_status,
          generation_status, cache_key, reviewed)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
+         guidance_key = excluded.guidance_key,
          speakable_text = excluded.speakable_text,
+         content_hash = excluded.content_hash,
          voice_version = excluded.voice_version,
+         review_status = excluded.review_status,
+         audio_asset_id = excluded.audio_asset_id,
+         cache_status = excluded.cache_status,
          generation_status = excluded.generation_status,
          cache_key = excluded.cache_key,
          reviewed = excluded.reviewed`,
     ).run(
       DEMO_IDS.guidance,
       DEMO_IDS.recipeVersion,
+      "cook.step_add",
       DEMO_IDS.stepAdd,
       null,
       "en-IN",
-      "Now add one cup of spinach.",
+      "Now add half a cup of spinach.",
+      GUIDANCE_CONTENT_HASH,
       "fixture-v1",
+      "reviewed",
+      "demo-audio-step-add",
+      "cached",
       "ready",
-      "demo/en-IN/step-add",
+      `demo/en-IN/${GUIDANCE_CONTENT_HASH}/fixture-v1`,
       1,
     );
 
     client.prepare(
       `INSERT INTO visual_assets
-        (id, type, source_url, owner, attribution, rights_status, alt_text, spoken_description,
-         verification_status, reviewed_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, kind, purpose, type, source_url, owner, attribution, verification, rights,
+         content_hash, asset_version, accessible_name_message_id, spoken_description_message_id,
+         rights_status, alt_text, spoken_description, verification_status, reviewed_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
+         kind = excluded.kind,
+         purpose = excluded.purpose,
          type = excluded.type,
          source_url = excluded.source_url,
          owner = excluded.owner,
          attribution = excluded.attribution,
+         verification = excluded.verification,
+         rights = excluded.rights,
+         content_hash = excluded.content_hash,
+         asset_version = excluded.asset_version,
+         accessible_name_message_id = excluded.accessible_name_message_id,
+         spoken_description_message_id = excluded.spoken_description_message_id,
          rights_status = excluded.rights_status,
          alt_text = excluded.alt_text,
          spoken_description = excluded.spoken_description,
@@ -286,10 +348,18 @@ export function seedDemoData(client: Database.Database): void {
          reviewed_by = excluded.reviewed_by`,
     ).run(
       DEMO_IDS.visual,
+      "state_icon",
+      "show_state",
       "icon",
       null,
       "Recipe App",
       "Local demo icon; no external media",
+      "approved",
+      "bundled",
+      VISUAL_CONTENT_HASH,
+      "fixture-v1",
+      "visual.spinach.name",
+      "visual.spinach.description",
       "verified",
       "Spinach leaf icon",
       "Spinach",
@@ -311,15 +381,15 @@ export function seedDemoData(client: Database.Database): void {
       DEMO_IDS.ingredientSpinach,
       null,
       DEMO_IDS.visual,
-      "ingredient_identity",
+      "identify_ingredient",
       1,
     );
 
     client.prepare(
       `INSERT INTO cooking_assignments
         (id, household_id, recipe_version_id, assignee_id, created_by, scheduled_date,
-         meal_slot, target_time, target_servings, notes, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         meal_slot, target_time, target_servings, selected_locale, notes, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          recipe_version_id = excluded.recipe_version_id,
          assignee_id = excluded.assignee_id,
@@ -327,6 +397,7 @@ export function seedDemoData(client: Database.Database): void {
          meal_slot = excluded.meal_slot,
          target_time = excluded.target_time,
          target_servings = excluded.target_servings,
+         selected_locale = excluded.selected_locale,
          notes = excluded.notes,
          status = excluded.status,
          updated_at = excluded.updated_at`,
@@ -340,10 +411,47 @@ export function seedDemoData(client: Database.Database): void {
       "lunch",
       "12:30",
       2,
+      "en-IN",
       "Foundation fixture only",
       "scheduled",
       SEEDED_AT,
       SEEDED_AT,
+    );
+
+    client.prepare(
+      `INSERT INTO audio_readiness
+        (id, assignment_id, recipe_version_id, locale, snapshot_content_hash, status,
+         required_guidance_count, cached_audio_count, compatible_device_voice,
+         reviewed_text_stored, recipe_snapshot_stored, visual_metadata_stored,
+         checked_at, failure_reason)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         recipe_version_id = excluded.recipe_version_id,
+         snapshot_content_hash = excluded.snapshot_content_hash,
+         status = excluded.status,
+         required_guidance_count = excluded.required_guidance_count,
+         cached_audio_count = excluded.cached_audio_count,
+         compatible_device_voice = excluded.compatible_device_voice,
+         reviewed_text_stored = excluded.reviewed_text_stored,
+         recipe_snapshot_stored = excluded.recipe_snapshot_stored,
+         visual_metadata_stored = excluded.visual_metadata_stored,
+         checked_at = excluded.checked_at,
+         failure_reason = excluded.failure_reason`,
+    ).run(
+      DEMO_IDS.audioReadiness,
+      DEMO_IDS.assignment,
+      DEMO_IDS.recipeVersion,
+      "en-IN",
+      SNAPSHOT_CONTENT_HASH,
+      "ready_cached_audio",
+      1,
+      1,
+      0,
+      1,
+      1,
+      1,
+      SEEDED_AT,
+      null,
     );
   })();
 }

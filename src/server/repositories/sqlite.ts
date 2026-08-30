@@ -82,11 +82,15 @@ export class SqliteRecipeRepository implements RecipeRepository {
       ingredients: ingredients.map((ingredient) => ({
         ...ingredient,
         order: ingredient.sortOrder,
+        quantity: ingredient.quantityJson ? (JSON.parse(ingredient.quantityJson) as unknown) : null,
+        unit: ingredient.unitJson ? (JSON.parse(ingredient.unitJson) as unknown) : null,
+        evidence: JSON.parse(ingredient.evidenceJson) as unknown,
       })),
       steps: steps.map((step) => ({
         ...step,
         order: step.sortOrder,
         ingredientIds: JSON.parse(step.ingredientIdsJson) as unknown,
+        evidence: JSON.parse(step.evidenceJson) as unknown,
       })),
     });
   }

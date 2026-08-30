@@ -52,6 +52,7 @@ export const importJobs = sqliteTable("import_jobs", {
   attemptCount: integer("attempt_count").notNull(),
   errorCode: text("error_code"),
   warningsJson: text("warnings_json").notNull(),
+  contractVersion: text("contract_version", { enum: ["web-recipe-import/v1"] }).notNull(),
   extractorVersion: text("extractor_version").notNull(),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
@@ -92,20 +93,30 @@ export const recipeIngredients = sqliteTable("recipe_ingredients", {
   id: text("id").primaryKey(),
   recipeVersionId: text("recipe_version_id").notNull().references(() => recipeVersions.id),
   displayLine: text("display_line").notNull(),
+  originalText: text("original_text").notNull(),
+  displayText: text("display_text").notNull(),
+  ingredientText: text("ingredient_text").notNull(),
   canonicalName: text("canonical_name"),
-  quantity: real("quantity"),
-  unit: text("unit"),
+  quantityJson: text("quantity_json"),
+  unitJson: text("unit_json"),
+  // Upgrade compatibility only; normalized source data lives in validated JSON above.
+  legacyQuantity: real("quantity"),
+  legacyUnit: text("unit"),
   preparationNote: text("preparation_note"),
   optional: integer("optional", { mode: "boolean" }).notNull(),
   sortOrder: integer("sort_order").notNull(),
   confidence: real("confidence").notNull(),
-  evidence: text("evidence"),
+  evidenceJson: text("evidence_json").notNull(),
+  legacyEvidence: text("evidence"),
 });
 
 export const recipeSteps = sqliteTable("recipe_steps", {
   id: text("id").primaryKey(),
   recipeVersionId: text("recipe_version_id").notNull().references(() => recipeVersions.id),
   sortOrder: integer("sort_order").notNull(),
+  section: text("section"),
+  originalText: text("original_text").notNull(),
+  displayText: text("display_text").notNull(),
   shortText: text("short_text").notNull(),
   detailedText: text("detailed_text").notNull(),
   action: text("action"),
@@ -113,28 +124,74 @@ export const recipeSteps = sqliteTable("recipe_steps", {
   temperatureCelsius: integer("temperature_celsius"),
   ingredientIdsJson: text("ingredient_ids_json").notNull(),
   confidence: real("confidence").notNull(),
-  evidence: text("evidence"),
+  evidenceJson: text("evidence_json").notNull(),
+  legacyEvidence: text("evidence"),
 });
 
-export const spokenGuidance = sqliteTable("spoken_guidance", {
-  id: text("id").primaryKey(),
-  recipeVersionId: text("recipe_version_id").notNull().references(() => recipeVersions.id),
-  stepId: text("step_id").references(() => recipeSteps.id),
-  interfaceKey: text("interface_key"),
-  locale: text("locale").notNull(),
-  speakableText: text("speakable_text").notNull(),
-  voiceVersion: text("voice_version").notNull(),
-  generationStatus: text("generation_status").notNull(),
-  cacheKey: text("cache_key"),
-  reviewed: integer("reviewed", { mode: "boolean" }).notNull(),
-});
+export const spokenGuidance = sqliteTable(
+  "spoken_guidance",
+  {
+    id: text("id").primaryKey(),
+    recipeVersionId: text("recipe_version_id").notNull().references(() => recipeVersions.id),
+    guidanceKey: text("guidance_key").notNull(),
+    stepId: text("step_id").references(() => recipeSteps.id),
+    interfaceKey: text("interface_key"),
+    locale: text("locale").notNull(),
+    speakableText: text("speakable_text").notNull(),
+    contentHash: text("content_hash").notNull(),
+    voiceVersion: text("voice_version").notNull(),
+    reviewStatus: text("review_status", { enum: ["unreviewed", "reviewed"] }).notNull(),
+    audioAssetId: text("audio_asset_id"),
+    cacheStatus: text("cache_status", {
+      enum: ["not_cached", "cached", "failed"],
+    }).notNull(),
+    // Upgrade compatibility for the pre-contract foundation migration.
+    generationStatus: text("generation_status").notNull(),
+    cacheKey: text("cache_key"),
+    reviewed: integer("reviewed", { mode: "boolean" }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("spoken_guidance_content_identity_unique").on(
+      table.recipeVersionId,
+      table.guidanceKey,
+      table.locale,
+      table.contentHash,
+      table.voiceVersion,
+    ),
+  ],
+);
 
 export const visualAssets = sqliteTable("visual_assets", {
   id: text("id").primaryKey(),
+  kind: text("kind", {
+    enum: ["ingredient_photo", "step_image", "action_icon", "state_icon"],
+  }).notNull(),
+  purpose: text("purpose", {
+    enum: ["identify_ingredient", "show_result", "show_action", "show_state"],
+  }).notNull(),
   type: text("type").notNull(),
   sourceUrl: text("source_url"),
   owner: text("owner").notNull(),
   attribution: text("attribution").notNull(),
+  verification: text("verification", {
+    enum: ["approved", "unreviewed", "expired", "rejected"],
+  }).notNull(),
+  rights: text("rights", {
+    enum: [
+      "bundled",
+      "licensed",
+      "user_owned_confirmed",
+      "source_embed_allowed",
+      "unknown",
+      "prohibited",
+      "expired",
+    ],
+  }).notNull(),
+  contentHash: text("content_hash").notNull(),
+  assetVersion: text("asset_version").notNull(),
+  accessibleNameMessageId: text("accessible_name_message_id"),
+  spokenDescriptionMessageId: text("spoken_description_message_id"),
+  // Upgrade compatibility for the pre-contract foundation migration.
   rightsStatus: text("rights_status").notNull(),
   altText: text("alt_text").notNull(),
   spokenDescription: text("spoken_description").notNull(),
@@ -162,8 +219,34 @@ export const cookingAssignments = sqliteTable("cooking_assignments", {
   mealSlot: text("meal_slot").notNull(),
   targetTime: text("target_time"),
   targetServings: real("target_servings").notNull(),
+  selectedLocale: text("selected_locale", { enum: ["en-IN", "hi-IN"] }).notNull(),
   notes: text("notes"),
   status: text("status").notNull(),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
+
+export const audioReadiness = sqliteTable(
+  "audio_readiness",
+  {
+    id: text("id").primaryKey(),
+    assignmentId: text("assignment_id").notNull().references(() => cookingAssignments.id),
+    recipeVersionId: text("recipe_version_id").notNull().references(() => recipeVersions.id),
+    locale: text("locale").notNull(),
+    snapshotContentHash: text("snapshot_content_hash").notNull(),
+    status: text("status", {
+      enum: ["checking", "ready_cached_audio", "ready_device_tts", "not_ready"],
+    }).notNull(),
+    requiredGuidanceCount: integer("required_guidance_count").notNull(),
+    cachedAudioCount: integer("cached_audio_count").notNull(),
+    compatibleDeviceVoice: integer("compatible_device_voice", { mode: "boolean" }).notNull(),
+    reviewedTextStored: integer("reviewed_text_stored", { mode: "boolean" }).notNull(),
+    recipeSnapshotStored: integer("recipe_snapshot_stored", { mode: "boolean" }).notNull(),
+    visualMetadataStored: integer("visual_metadata_stored", { mode: "boolean" }).notNull(),
+    checkedAt: text("checked_at").notNull(),
+    failureReason: text("failure_reason"),
+  },
+  (table) => [
+    uniqueIndex("audio_readiness_assignment_locale_unique").on(table.assignmentId, table.locale),
+  ],
+);
