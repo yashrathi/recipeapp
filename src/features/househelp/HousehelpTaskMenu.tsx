@@ -8,10 +8,16 @@ import styles from "@/app/househelp/househelp.module.css";
 
 import { formatMessage, label, localeBundles } from "./locales";
 import { BrowserSpeechAdapter, SerializedSpeechQueue } from "./speech";
-import type { HousehelpAssignmentSummary } from "./server/repository";
+import type {
+  HousehelpAssignmentSummary,
+  HousehelpRecipeSummary,
+} from "./server/repository";
 import type { HousehelpLocale, SpeechToken } from "./types";
 
 type MenuView = "audio_gate" | "language" | "menu" | "empty" | "audio_error";
+type MenuItem =
+  | { kind: "task"; task: HousehelpAssignmentSummary }
+  | { kind: "recipe"; recipe: HousehelpRecipeSummary };
 
 const STORAGE_PREFIX = "recipe-app:househelp:v1:";
 
@@ -46,28 +52,43 @@ function scheduledDate(locale: HousehelpLocale, value: string): string {
 
 export function HousehelpTaskMenu({
   initialTasks,
+  initialRecipes,
 }: {
   initialTasks: HousehelpAssignmentSummary[];
+  initialRecipes: HousehelpRecipeSummary[];
 }) {
   const router = useRouter();
   const adapter = useMemo(() => new BrowserSpeechAdapter(), []);
   const queue = useMemo(() => new SerializedSpeechQueue(adapter), [adapter]);
   const [tasks, setTasks] = useState(initialTasks);
-  const [view, setView] = useState<MenuView>(initialTasks.length ? "audio_gate" : "empty");
+  const items = useMemo<MenuItem[]>(() => [
+    ...tasks.map((task) => ({ kind: "task" as const, task })),
+    ...initialRecipes.map((recipe) => ({ kind: "recipe" as const, recipe })),
+  ], [initialRecipes, tasks]);
+  const [view, setView] = useState<MenuView>(
+    initialTasks.length || initialRecipes.length ? "audio_gate" : "empty",
+  );
   const [locale, setLocale] = useState<HousehelpLocale>(initialTasks[0]?.selectedLocale ?? "en-IN");
-  const [taskIndex, setTaskIndex] = useState(0);
+  const [itemIndex, setItemIndex] = useState(0);
   const [speaking, setSpeaking] = useState(false);
+  const [startingRecipe, setStartingRecipe] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
   const generationRef = useRef(0);
+  const startingRecipeRef = useRef(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     const visibleTasks = initialTasks.filter(({ id }) => !locallyCompleted(id));
     setTasks(visibleTasks);
-    if (!visibleTasks.length) setView("empty");
-  }, [initialTasks]);
+    if (!visibleTasks.length && !initialRecipes.length) setView("empty");
+  }, [initialRecipes.length, initialTasks]);
+
+  useEffect(() => {
+    if (itemIndex >= items.length) setItemIndex(0);
+  }, [itemIndex, items.length]);
 
   useEffect(() => () => queue.cancel(), [queue]);
-  useEffect(() => headingRef.current?.focus({ preventScroll: true }), [view, taskIndex]);
+  useEffect(() => headingRef.current?.focus({ preventScroll: true }), [itemIndex, view]);
 
   const play = useCallback(async (requests: Array<{ locale: HousehelpLocale; text: string }>) => {
     const generation = generationRef.current + 1;
@@ -83,27 +104,36 @@ export function HousehelpTaskMenu({
     return outcome;
   }, [locale, queue]);
 
-  const task = tasks[taskIndex];
-  const taskPrompt = useCallback((candidate: HousehelpAssignmentSummary, index: number) => {
-    const translated = candidate.translations[locale];
-    const action = label(locale, candidate.status === "scheduled" ? "start" : "resume");
+  const item = items[itemIndex];
+  const itemPrompt = useCallback((candidate: MenuItem, index: number) => {
+    if (candidate.kind === "recipe") {
+      const translated = candidate.recipe.translations[locale];
+      return formatMessage(locale, "menu.recipe", {
+        current: index + 1,
+        total: items.length,
+        dish: translated.dish,
+        servings: translated.servingsSpeech,
+      });
+    }
+    const translated = candidate.task.translations[locale];
+    const action = label(locale, candidate.task.status === "scheduled" ? "start" : "resume");
     return formatMessage(locale, "menu.task", {
       current: index + 1,
-      total: tasks.length,
+      total: items.length,
       dish: translated.dish,
-      date: scheduledDate(locale, candidate.scheduledDate),
+      date: scheduledDate(locale, candidate.task.scheduledDate),
       meal: translated.meal,
       targetTime: translated.targetTimeSpeech,
       action,
     });
-  }, [locale, tasks.length]);
+  }, [items.length, locale]);
 
   async function activateAudio() {
     if (!await adapter.probe(locale)) {
       setView("audio_error");
       return;
     }
-    if (!tasks.length) {
+    if (!items.length) {
       await play([
         { locale, text: formatMessage(locale, "control.activate_audio") },
         { locale, text: formatMessage(locale, "menu.empty") },
@@ -124,24 +154,61 @@ export function HousehelpTaskMenu({
 
   async function continueToMenu() {
     setView("menu");
-    if (task) await play([
+    if (item) await play([
       { locale, text: formatMessage(locale, "control.continue") },
-      { locale, text: taskPrompt(task, taskIndex) },
+      { locale, text: itemPrompt(item, itemIndex) },
     ]);
   }
 
-  async function showNextTask() {
-    if (!tasks.length) return;
-    const nextIndex = (taskIndex + 1) % tasks.length;
-    setTaskIndex(nextIndex);
+  async function showNextItem() {
+    if (!items.length) return;
+    const nextIndex = (itemIndex + 1) % items.length;
+    setItemIndex(nextIndex);
     await play([
       { locale, text: formatMessage(locale, "control.next") },
-      { locale, text: taskPrompt(tasks[nextIndex]!, nextIndex) },
+      { locale, text: itemPrompt(items[nextIndex]!, nextIndex) },
     ]);
   }
 
-  async function openTask() {
-    if (!task) return;
+  async function openItem() {
+    if (!item) return;
+    if (item.kind === "recipe") {
+      if (startingRecipeRef.current) return;
+      startingRecipeRef.current = true;
+      setStartingRecipe(true);
+      setStatusMessage("");
+      const translated = item.recipe.translations[locale];
+      const outcome = await play([
+        { locale, text: formatMessage(locale, "control.cook_now") },
+        { locale, text: formatMessage(locale, "menu.open_recipe", { dish: translated.dish }) },
+      ]);
+      if (outcome !== "completed") {
+        startingRecipeRef.current = false;
+        setStartingRecipe(false);
+        return;
+      }
+      try {
+        const response = await fetch(
+          `/api/househelp/recipes/${encodeURIComponent(item.recipe.recipeVersionId)}/start`,
+          {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ locale }),
+          },
+        );
+        const payload = await response.json() as { id?: string; error?: string };
+        if (!response.ok || !payload.id) throw new Error(payload.error ?? "start_failed");
+        router.push(`/househelp/${encodeURIComponent(payload.id)}`);
+      } catch {
+        const message = formatMessage(locale, "menu.start_failed");
+        startingRecipeRef.current = false;
+        setStartingRecipe(false);
+        setStatusMessage(message);
+        await play([{ locale, text: message }]);
+      }
+      return;
+    }
+    const task = item.task;
     const actionId = task.status === "scheduled" ? "start" : "resume";
     const action = label(locale, actionId);
     const outcome = await play([
@@ -161,10 +228,10 @@ export function HousehelpTaskMenu({
   }
 
   async function repeatTask() {
-    if (!task) return;
+    if (!item) return;
     await play([
       { locale, text: formatMessage(locale, "control.repeat") },
-      { locale, text: taskPrompt(task, taskIndex) },
+      { locale, text: itemPrompt(item, itemIndex) },
     ]);
   }
 
@@ -236,25 +303,45 @@ export function HousehelpTaskMenu({
         </button>
       </section>
     );
-  } else if (view === "menu" && task) {
-    const translated = task.translations[locale];
-    const actionId = task.status === "scheduled" ? "start" : "resume";
+  } else if (view === "menu" && item) {
+    const translated = item.kind === "task"
+      ? item.task.translations[locale]
+      : item.recipe.translations[locale];
+    const actionId = item.kind === "task"
+      ? item.task.status === "scheduled" ? "start" : "resume"
+      : "cook_now";
     content = (
       <section className={styles.screen} aria-labelledby="menu-task-title">
-        <p className={styles.kicker}>{formatMessage(locale, "menu.heading")}</p>
-        <p className={styles.counter}>{taskIndex + 1} / {tasks.length}</p>
+        <p className={styles.kicker}>{item.kind === "task"
+          ? formatMessage(locale, "menu.heading")
+          : formatMessage(locale, "menu.recipe_kicker")}</p>
+        <p className={styles.counter}>{itemIndex + 1} / {items.length}</p>
         <h1 id="menu-task-title" ref={headingRef} tabIndex={-1}>{translated.dish}</h1>
         <div className={styles.heroVisual}>
           <Image src="/househelp/state-dish.svg" alt="" width={280} height={220} priority />
         </div>
-        <p className={styles.bigMeta}>{translated.meal} · {translated.targetTimeSpeech}</p>
-        <p className={styles.menuDate}>{scheduledDate(locale, task.scheduledDate)} · {translated.servingsSpeech}</p>
+        {item.kind === "task" ? (
+          <>
+            <p className={styles.bigMeta}>
+              {item.task.translations[locale].meal} · {item.task.translations[locale].targetTimeSpeech}
+            </p>
+            <p className={styles.menuDate}>
+              {scheduledDate(locale, item.task.scheduledDate)} · {translated.servingsSpeech}
+            </p>
+          </>
+        ) : <p className={styles.bigMeta}>{translated.servingsSpeech}</p>}
         <div className={styles.actionStack}>
-          <button className={styles.primaryButton} type="button" onClick={() => void openTask()}>
+          <button
+            className={styles.primaryButton}
+            type="button"
+            disabled={item.kind === "recipe" && startingRecipe}
+            aria-busy={item.kind === "recipe" && startingRecipe}
+            onClick={() => void openItem()}
+          >
             <span aria-hidden="true">▶</span> {label(locale, actionId)}
           </button>
-          {tasks.length > 1 ? (
-            <button className={styles.secondaryButton} type="button" onClick={() => void showNextTask()}>
+          {items.length > 1 ? (
+            <button className={styles.secondaryButton} type="button" onClick={() => void showNextItem()}>
               {label(locale, "next")} <span aria-hidden="true">→</span>
             </button>
           ) : null}
@@ -287,7 +374,7 @@ export function HousehelpTaskMenu({
   return (
     <main className={styles.shell} lang={locale} data-view={view}>
       {topBar}
-      <div className={styles.liveStatus} aria-live="polite" />
+      <div className={styles.liveStatus} aria-live="polite">{statusMessage}</div>
       {content}
     </main>
   );

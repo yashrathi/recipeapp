@@ -523,6 +523,8 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
               className={`${styles.languageButton} ${state.locale === locale ? styles.selected : ""}`}
               type="button"
               onClick={() => void runEvent({ type: "SELECT_LANGUAGE", locale })}
+              disabled={persistenceBusy}
+              aria-busy={persistenceBusy}
               aria-label={localeBundles[locale].languageName}
               aria-pressed={state.locale === locale}
               lang={locale}
@@ -532,7 +534,13 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
             </button>
           ))}
         </div>
-        <button className={styles.primaryButton} type="button" onClick={() => void runEvent({ type: "CONTINUE" })}>
+        <button
+          className={styles.primaryButton}
+          type="button"
+          disabled={persistenceBusy}
+          aria-busy={persistenceBusy}
+          onClick={() => void runEvent({ type: "CONTINUE" })}
+        >
           {label(state.locale, "continue")}
           <span aria-hidden="true">→</span>
         </button>

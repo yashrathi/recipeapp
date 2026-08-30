@@ -5,6 +5,10 @@ import { MilestoneOneSpokenLocaleSchema } from "@/domain/contracts";
 const IdempotencyKeySchema = z.string().trim().min(1).max(300);
 const RevisionSchema = z.number().int().nonnegative();
 
+export const HousehelpAdHocStartSchema = z.object({
+  locale: MilestoneOneSpokenLocaleSchema,
+});
+
 export const HousehelpMutationSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("locale"), locale: MilestoneOneSpokenLocaleSchema }),
   z.object({

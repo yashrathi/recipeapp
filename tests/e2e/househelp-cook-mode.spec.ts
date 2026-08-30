@@ -31,7 +31,7 @@ async function installSpeechMock(page: import("@playwright/test").Page) {
 
 async function openFirstTaskFromMenu(page: Page) {
   await expect(page.getByRole("heading", { name: "Cooking menu" })).toBeVisible();
-  await page.getByRole("button", { name: "Turn on sound" }).click();
+  await page.getByRole("button", { name: /Turn on sound|आवाज़ चालू करें/ }).click();
   await page.getByRole("button", { name: "हिन्दी", exact: true }).click();
   await page.getByRole("button", { name: "आगे बढ़ें" }).click();
   await expect(page.getByRole("heading", { name: "पालक पनीर" })).toBeVisible();
@@ -114,7 +114,8 @@ async function completeCookFlow({ page, isMobile }: { page: Page; isMobile: bool
   await expect(page.getByText("पूरा हुआ। घर के मालिक को बता दिया गया है।")).toBeVisible();
   await expect(page.getByRole("button", { name: "खाना बनाने की सूची" })).toBeEnabled();
   await expect(page).toHaveURL(/\/househelp$/, { timeout: 10_000 });
-  await expect(page.getByRole("heading", { name: /Cooking menu|No cooking tasks/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cooking menu" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Turn on sound|आवाज़ चालू करें/ })).toBeEnabled();
 
   const menuResponse = await page.request.get("/api/househelp/assignments");
   expect(menuResponse.ok()).toBeTruthy();
@@ -212,6 +213,15 @@ test("409 and stalled progress responses cannot leave ingredient controls locked
   })).toBe(2);
 });
 
+test("homeowner session cannot start a househelp ad-hoc cooking run", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Enter homeowner shell" }).click();
+  const response = await page.request.post("/api/househelp/recipes/demo-recipe-v1/start", {
+    data: { locale: "en-IN" },
+  });
+  expect(response.status()).toBe(403);
+});
+
 test("cooking menu remains an explicit escape from an active task", async ({ page, isMobile }) => {
   test.skip(!isMobile, "The menu escape is exercised at the narrow-phone target.");
 
@@ -234,3 +244,50 @@ test("cooking menu remains an explicit escape from an active task", async ({ pag
 });
 
 test("househelp completes the audio-first cook flow on a narrow phone", completeCookFlow);
+
+test("househelp can start a published household recipe without an assignment", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "The ad-hoc cooking path is exercised at the narrow-phone target.");
+
+  await installSpeechMock(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Enter househelp shell" }).click();
+  const initialMenuResponse = await page.request.get("/api/househelp/assignments");
+  const initialMenu = await initialMenuResponse.json() as {
+    assignments: Array<{ id: string }>;
+    recipes: Array<{ recipeVersionId: string }>;
+  };
+  const demoRecipeIndex = initialMenu.recipes.findIndex(
+    ({ recipeVersionId }) => recipeVersionId === "demo-recipe-v1",
+  );
+  expect(demoRecipeIndex).toBeGreaterThanOrEqual(0);
+  await page.evaluate((assignmentIds) => {
+    for (const assignmentId of assignmentIds) {
+      window.localStorage.setItem(`recipe-app:househelp:v1:${assignmentId}`, JSON.stringify({
+        state: { completed: true },
+      }));
+    }
+  }, initialMenu.assignments.map(({ id }) => id));
+  await page.goto("/househelp");
+  await page.getByRole("button", { name: /Turn on sound|आवाज़ चालू करें/ }).click();
+  await page.getByRole("button", { name: "हिन्दी", exact: true }).click();
+  await page.getByRole("button", { name: "आगे बढ़ें" }).click();
+  for (let index = 0; index < demoRecipeIndex; index += 1) {
+    await page.getByRole("button", { name: "अगला" }).click();
+  }
+
+  await expect(page.getByRole("heading", { name: "सादा पालक" })).toBeVisible();
+  await expect(page.getByText("घर की रेसिपी")).toBeVisible();
+  const menuResponse = await page.request.get("/api/househelp/assignments");
+  const menuPayload = await menuResponse.json() as { recipes: Array<{ recipeVersionId: string }> };
+  expect(menuPayload.recipes.map(({ recipeVersionId }) => recipeVersionId))
+    .toContain("demo-recipe-v1");
+  await page.getByRole("button", { name: "अभी बनाएँ" }).click();
+  await expect(page).toHaveURL(/\/househelp\/(?!demo-assignment)[^/]+$/);
+  await expect(page.locator("main")).toHaveAttribute("data-view", "audio_gate");
+  await page.getByRole("button", { name: "आवाज़ चालू करें" }).click();
+  await page.getByRole("button", { name: "हिन्दी", exact: true }).click();
+  await page.getByRole("button", { name: "आगे बढ़ें" }).click();
+  await page.getByRole("button", { name: "शुरू करें" }).click();
+  await page.getByRole("button", { name: "सामग्री जाँचें" }).click();
+  await expect(page.getByRole("heading", { name: "आधा कप धुला हुआ पालक" })).toBeVisible();
+});

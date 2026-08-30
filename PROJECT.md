@@ -2,7 +2,7 @@
 
 ## Product brief
 
-A two-role web app that turns a public recipe webpage or YouTube cooking video into a clear, reviewable recipe. A homeowner can import, correct, schedule, assign, and shop for a recipe. A househelp can see assigned cooking work and follow ingredient and step-by-step instructions in a simple, mobile-friendly cooking mode.
+A two-role web app that turns a public recipe webpage or YouTube cooking video into a clear, reviewable recipe. A homeowner can import, correct, schedule, assign, and shop for a recipe. A househelp can follow assigned work or choose a published household recipe after an in-person request, then use ingredient and step-by-step instructions in a simple, mobile-friendly cooking mode.
 
 ## Implementation status
 
@@ -11,7 +11,7 @@ Milestone 1 is implemented and verified locally. It covers public webpage import
 ## Users
 
 - **Homeowner:** chooses recipes, reviews extracted content, manages assignments, and approves shopping or ordering.
-- **Househelp:** prepares assigned dishes, follows instructions, marks progress, and reports missing ingredients or questions.
+- **Househelp:** prepares assigned dishes or starts a published household recipe after an in-person request, follows instructions, marks progress, and reports missing ingredients or questions.
 
 Both roles belong to a **household**. A person may belong to more than one household, and permissions are scoped to each membership.
 

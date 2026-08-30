@@ -13,7 +13,12 @@ export default async function HousehelpPage() {
   try {
     const actor = await getHousehelpActor();
     const repository = new HousehelpRepository(getDatabaseHandle().client);
-    return <HousehelpTaskMenu initialTasks={repository.listVisible(actor)} />;
+    return (
+      <HousehelpTaskMenu
+        initialTasks={repository.listVisible(actor)}
+        initialRecipes={repository.listCookableRecipes(actor)}
+      />
+    );
   } catch (error) {
     if (error instanceof HousehelpAccessError && error.status === 401) redirect("/");
     if (error instanceof HousehelpAccessError && error.status === 403) redirect("/workspace");

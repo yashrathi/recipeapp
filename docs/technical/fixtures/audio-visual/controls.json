@@ -4,6 +4,7 @@
     { "id": "activate_audio", "views": ["audio_gate"], "labelId": "activate_audio", "accessibleNameId": "activate_audio", "activationMessageId": "control.activate_audio", "core": true, "consequence": "preference" },
     { "id": "continue", "views": ["language"], "labelId": "continue", "accessibleNameId": "continue", "activationMessageId": "control.continue", "core": true, "consequence": "safe" },
     { "id": "start", "views": ["today"], "labelId": "start", "accessibleNameId": "start", "activationMessageId": "control.start", "core": true, "consequence": "safe" },
+    { "id": "cook_now", "views": ["menu"], "labelId": "cook_now", "accessibleNameId": "cook_now", "activationMessageId": "control.cook_now", "core": true, "consequence": "progress" },
     { "id": "start_cooking", "views": ["ingredient"], "labelId": "start_cooking", "accessibleNameId": "start_cooking", "activationMessageId": "control.start_cooking", "core": true, "consequence": "progress" },
     { "id": "resume", "views": ["today"], "labelId": "resume", "accessibleNameId": "resume", "activationMessageId": "control.resume", "core": true, "consequence": "safe" },
     { "id": "check_ingredients", "views": ["briefing"], "labelId": "check_ingredients", "accessibleNameId": "check_ingredients", "activationMessageId": "control.check_ingredients", "core": true, "consequence": "safe" },

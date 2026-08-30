@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import type Database from "better-sqlite3";
 
@@ -7,6 +7,7 @@ import { authorize } from "@/server/auth/policy";
 
 import type { AssignmentSnapshot, PersistedHousehelpProgress } from "../types";
 import type { HousehelpMutation } from "./contracts";
+import { buildAssignmentSnapshot, servingsSpeech } from "./snapshot";
 
 interface AssignmentRow {
   id: string;
@@ -62,6 +63,27 @@ export interface HousehelpAssignmentSummary {
     servingsSpeech: string;
     targetTimeSpeech: string;
   }>;
+}
+
+export interface HousehelpRecipeSummary {
+  recipeVersionId: string;
+  servings: number;
+  translations: Record<"en-IN" | "hi-IN", {
+    dish: string;
+    servingsSpeech: string;
+  }>;
+}
+
+function dateInTimezone(value: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone,
+  }).formatToParts(value);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((candidate) => candidate.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
 export class HousehelpRepository {
@@ -120,6 +142,139 @@ export class HousehelpRepository {
         },
       };
     });
+  }
+
+  listCookableRecipes(actor: HouseholdActor): HousehelpRecipeSummary[] {
+    if (actor.role !== "househelp") throw new HousehelpAccessError(403, "Househelp access required.");
+    const rows = this.client.prepare(
+      `SELECT v.id AS recipeVersionId, COALESCE(v.servings, 2) AS servings,
+              en.speakable_text AS englishDish, hi.speakable_text AS hindiDish
+       FROM recipes r
+       JOIN recipe_versions v ON v.id = r.current_version_id
+       JOIN spoken_guidance en
+         ON en.recipe_version_id = v.id AND en.guidance_key = 'recipe.dish'
+        AND en.locale = 'en-IN' AND en.review_status = 'reviewed'
+       JOIN spoken_guidance hi
+         ON hi.recipe_version_id = v.id AND hi.guidance_key = 'recipe.dish'
+        AND hi.locale = 'hi-IN' AND hi.review_status = 'reviewed'
+       WHERE r.household_id = ? AND r.status = 'published' AND v.review_status = 'published'
+         AND (
+           SELECT COUNT(DISTINCT guidance_key) FROM spoken_guidance
+           WHERE recipe_version_id = v.id AND locale = 'en-IN' AND review_status = 'reviewed'
+         ) = 1
+           + (SELECT COUNT(*) FROM recipe_ingredients WHERE recipe_version_id = v.id)
+           + (SELECT COUNT(*) FROM recipe_steps WHERE recipe_version_id = v.id)
+         AND (
+           SELECT COUNT(DISTINCT guidance_key) FROM spoken_guidance
+           WHERE recipe_version_id = v.id AND locale = 'hi-IN' AND review_status = 'reviewed'
+         ) = 1
+           + (SELECT COUNT(*) FROM recipe_ingredients WHERE recipe_version_id = v.id)
+           + (SELECT COUNT(*) FROM recipe_steps WHERE recipe_version_id = v.id)
+       ORDER BY en.speakable_text COLLATE NOCASE, v.id`,
+    ).all(actor.householdId) as Array<{
+      recipeVersionId: string;
+      servings: number;
+      englishDish: string;
+      hindiDish: string;
+    }>;
+
+    return rows.map((row) => ({
+      recipeVersionId: row.recipeVersionId,
+      servings: row.servings,
+      translations: {
+        "en-IN": {
+          dish: row.englishDish,
+          servingsSpeech: servingsSpeech(row.servings, "en-IN"),
+        },
+        "hi-IN": {
+          dish: row.hindiDish,
+          servingsSpeech: servingsSpeech(row.servings, "hi-IN"),
+        },
+      },
+    }));
+  }
+
+  startAdHocCooking(
+    actor: HouseholdActor,
+    recipeVersionId: string,
+    locale: "en-IN" | "hi-IN",
+    now = new Date(),
+  ): { id: string } {
+    if (actor.role !== "househelp") throw new HousehelpAccessError(403, "Househelp access required.");
+    let assignmentId = "";
+
+    this.client.transaction(() => {
+      const existing = this.client.prepare(
+        `SELECT id FROM cooking_assignments
+         WHERE household_id = ? AND assignee_id = ? AND recipe_version_id = ?
+           AND origin = 'ad_hoc' AND status NOT IN ('cancelled', 'reassigned', 'done')
+         ORDER BY created_at DESC LIMIT 1`,
+      ).get(actor.householdId, actor.userId, recipeVersionId) as { id: string } | undefined;
+      if (existing) {
+        assignmentId = existing.id;
+        return;
+      }
+
+      const recipe = this.listCookableRecipes(actor)
+        .find((candidate) => candidate.recipeVersionId === recipeVersionId);
+      if (!recipe) {
+        throw new HousehelpAccessError(404, "Published household recipe not found.");
+      }
+      const household = this.client.prepare(
+        "SELECT timezone FROM households WHERE id = ?",
+      ).get(actor.householdId) as { timezone: string } | undefined;
+      if (!household) throw new HousehelpAccessError(404, "Household not found.");
+
+      assignmentId = randomUUID();
+      const timestamp = now.toISOString();
+      const scheduledDate = dateInTimezone(now, household.timezone);
+      this.client.prepare(
+        `INSERT INTO cooking_assignments
+           (id, household_id, recipe_version_id, assignee_id, created_by, scheduled_date,
+            meal_slot, target_time, target_servings, selected_locale, notes, origin,
+            status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, 'anytime', NULL, ?, ?, NULL, 'ad_hoc',
+                 'scheduled', ?, ?)`,
+      ).run(
+        assignmentId,
+        actor.householdId,
+        recipeVersionId,
+        actor.userId,
+        actor.userId,
+        scheduledDate,
+        recipe.servings,
+        locale,
+        timestamp,
+        timestamp,
+      );
+      const insertSnapshot = this.client.prepare(
+        `INSERT INTO househelp_assignment_snapshots
+           (assignment_id, recipe_version_id, locale, snapshot_json, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      );
+      for (const snapshotLocale of ["en-IN", "hi-IN"] as const) {
+        const snapshot = buildAssignmentSnapshot(this.client, {
+          assignmentId,
+          assigneeId: actor.userId,
+          recipeVersionId,
+          mealSlot: "anytime",
+          targetTime: null,
+          targetServings: recipe.servings,
+          selectedLocale: snapshotLocale,
+          notes: { "en-IN": "", "hi-IN": "" },
+        });
+        insertSnapshot.run(
+          assignmentId,
+          recipeVersionId,
+          snapshotLocale,
+          JSON.stringify(snapshot),
+          timestamp,
+          timestamp,
+        );
+      }
+    })();
+
+    return { id: assignmentId };
   }
 
   getVisible(actor: HouseholdActor, assignmentId?: string): HousehelpAssignmentData | null {

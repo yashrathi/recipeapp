@@ -1,13 +1,14 @@
 # Glossary
 
-- **Assignment:** A reviewed recipe version scheduled for a household, assignee, date/meal, and serving count.
+- **Ad-hoc cooking run:** A cooking run started by househelp from a published household recipe after receiving an in-person request; it has no prior homeowner assignment.
+- **Assignment:** A reviewed recipe version scheduled in the app by a homeowner for a household, assignee, date/meal, and serving count.
 - **Audio-first mode:** The househelp interaction mode in which listening and tapping are sufficient to complete every core task; text is supplementary.
 - **Canonical recipe:** The household's reviewed recipe record, independent of any translated presentation.
 - **Cook mode:** The househelp-focused, one-step-at-a-time execution screen.
-- **Cooking menu:** The househelp-facing, one-item-at-a-time list of active assigned dishes available to start or resume; it is not the household recipe library.
-- **Cooking session:** One attempt to perform an assignment, pinned to a specific recipe version.
+- **Cooking menu:** The househelp-facing, one-item-at-a-time list of active assignments to start/resume and published household recipes available for an ad-hoc cooking run. Draft and archived recipes are excluded.
+- **Cooking session:** One attempt to perform either an assignment or an ad-hoc cooking run, pinned to a specific recipe version.
 - **Extraction warning:** A field-level indication that data is missing, ambiguous, or low confidence.
-- **Househelp:** The household member who prepares assigned dishes and reports progress or issues.
+- **Househelp:** The household member who prepares assigned dishes or published household recipes requested in person, and reports progress or issues.
 - **Homeowner:** The household member who imports/reviews recipes, assigns work, manages the household, and approves shopping.
 - **Import job:** Background processing that fetches/transcribes a source and extracts a draft recipe.
 - **Meal slot:** Breakfast, lunch, snack, or dinner, optionally with a target time.

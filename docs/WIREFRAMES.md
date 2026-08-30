@@ -223,7 +223,7 @@ Tap response: each option speaks its own language name. Selection says, for exam
 
 ## Househelp — HH1 Cooking menu
 
-Only one active assignment is prominent at a time. On entry, the app speaks its date, meal, target time, and `Start`/`Resume` action. `Next` cycles through other assigned dishes without requiring reading.
+Only one item is prominent at a time. An active assignment speaks its date, meal, target time, and `Start`/`Resume` action. A published household recipe says `Household recipe`, servings, and `Cook now`. `Next` cycles through both without requiring reading; draft and archived recipes never appear.
 
 ```text
 ┌──────────────────────────────────────────┐
@@ -249,6 +249,29 @@ Only one active assignment is prominent at a time. On entry, the app speaks its 
 ```
 
 Tap response: “Start. Opening paneer butter masala.” `Next` says its label, then announces the next assigned dish in full.
+
+When no assignment exists, the same screen shows the published household menu instead of a terminal no-task state:
+
+```text
+┌──────────────────────────────────────────┐
+│  🌐 हिन्दी                    🔊 Repeat │
+│                                          │
+│             HOUSEHOLD RECIPE             │
+│                                          │
+│        ┌────────────────────────┐        │
+│        │ ▣ verified dish cue    │        │
+│        └────────────────────────┘        │
+│                                          │
+│             Simple Spinach               │
+│               2 people                   │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │           ▶ COOK NOW              │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+```
+
+Tap response: “Cook now. Opening simple spinach.” The server creates a homeowner-visible ad-hoc cooking run and pins the current reviewed English/Hindi recipe guidance before opening the normal briefing and ingredient checklist.
 
 ## Househelp — HH2 Task briefing
 
@@ -407,9 +430,10 @@ flowchart LR
     B -->|success| C["Review draft"]
     B -->|failure| D["Retry or manual entry"]
     C --> E["Publish recipe version"]
-    E --> F["Assign date, meal, househelp, language"]
-    F --> O["Househelp: Hear and confirm language"]
-    O --> G["Hear and browse assigned dishes"]
+    E --> F["Optionally assign date, meal, househelp, language"]
+    E --> P["Published household recipe"]
+    F --> G["Househelp: Hear language and browse cooking menu"]
+    P --> G
     G --> H["Check ingredients"]
     H -->|missing| I["Notify homeowner"]
     H -->|ready| J["Hear one cooking step"]

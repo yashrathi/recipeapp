@@ -31,7 +31,7 @@ npm run db:setup
 npm run dev
 ```
 
-Open `http://localhost:3000`. The development-only role switcher creates a signed HTTP-only demo session for either seeded role. The endpoint is always disabled in production. Use the homeowner flow to import/manual-enter, review bilingual guidance, publish, and assign; use the househelp role to exercise the pinned assignment.
+Open `http://localhost:3000`. The development-only role switcher creates a signed HTTP-only demo session for either seeded role. The endpoint is always disabled in production. Use the homeowner flow to import/manual-enter, review bilingual guidance, publish, and assign. In the househelp role, either open the assigned task or choose the published household recipe and use `Cook now` to exercise an ad-hoc cooking run after an in-person request.
 
 Environment values:
 
@@ -50,7 +50,7 @@ Do not commit `.env.local`, database files, or real secrets. The committed `.env
 
 ## Database lifecycle
 
-`npm run db:migrate` applies the five current SQL migrations in filename order and records them in `app_migrations`. `npm run db:seed` upserts fixed IDs and timestamps, so rerunning it produces the same demo household, users, recipe, bilingual guidance, visual metadata, readiness state, and assignment without duplicates. `npm run db:setup` performs both operations.
+`npm run db:migrate` applies the six current SQL migrations in filename order and records them in `app_migrations`; `0040_ad_hoc_cooking.sql` distinguishes scheduled assignments from ad-hoc cooking runs. `npm run db:seed` upserts fixed IDs and timestamps, so rerunning it produces the same demo household, users, recipe, complete bilingual guidance, visual metadata, readiness state, and assignment without duplicates. `npm run db:setup` performs both operations.
 
 The local database is disposable. To rebuild it, stop the app, move `.data/recipe-app.sqlite` and its `-shm`/`-wal` companions out of `.data`, then run `npm run db:setup`. Moving the files preserves a recoverable backup. There are no production rollback commands until a production datastore is selected; SQL migrations are forward-only in this milestone.
 
@@ -72,7 +72,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The E2E runner initializes deterministic data in a dedicated per-run `.data/playwright-<pid>.sqlite` database and starts its own development server on port `3100` by default. It never reuses the normal port-3000 server or database. Stop any active `next dev` process before starting the browser suite because Next.js permits only one development process per build directory. It intentionally uses one worker because the desktop and mobile projects share the isolated fixture. Set `PORT` or `PLAYWRIGHT_DATABASE_PATH` only when a controlled test environment requires an override. Two desktop cases are skipped because their cook-mode acceptance is deliberately phone-only. HTML reports are written to the ignored `playwright-report/` directory.
+The E2E runner initializes deterministic data in a dedicated per-run `.data/playwright-<pid>.sqlite` database and starts its own development server on port `3100` by default. It never reuses the normal port-3000 server or database. Stop any active `next dev` process before starting the browser suite because Next.js permits only one development process per build directory. It intentionally uses one worker because the desktop and mobile projects share the isolated fixture. Set `PORT` or `PLAYWRIGHT_DATABASE_PATH` only when a controlled test environment requires an override. Four desktop cases are skipped because their cook-mode acceptance is deliberately phone-only. HTML reports are written to the ignored `playwright-report/` directory.
 
 Current verified baseline: 18 test files / 187 Vitest tests, a warning-free production build, and 10 passing Playwright cases across desktop/mobile with 2 intentional desktop skips.
 
@@ -96,7 +96,7 @@ Verified `main` is pushed to the private GitHub repository, but no deployment ta
 - Confirm every screen ID referenced in a workflow exists in `docs/PRODUCT-PLAN.md`.
 - Confirm wireframes cover the core homeowner import/review/assign/shop loop and househelp prepare/cook loop.
 - Confirm provider-dependent behavior is labeled as discovery or fallback rather than guaranteed.
-- Confirm the househelp flow includes first-tap audio activation, spoken labels/results, automatic next-step speech, replay, language change, offline readiness, a recoverable audio-failure path, local-only previous-step review, and a `Cooking menu` escape that works while completion speech is stalled.
+- Confirm the househelp flow includes first-tap audio activation, active assignments plus current published household recipes, an assignment-free `Cook now` path, spoken labels/results, automatic next-step speech, replay, language change, offline readiness, a recoverable audio-failure path, local-only previous-step review, and a `Cooking menu` escape that works while completion speech is stalled.
 - Confirm every househelp visual is purposeful, verified, accessible, rights-aware, and safely replaceable by spoken guidance if unavailable.
 - Confirm current facts live in `STATE`, completed work in `HISTORY`, decisions in `DECISIONS`, and durable gotchas in `MEMORY`.
 

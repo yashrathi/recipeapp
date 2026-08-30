@@ -146,6 +146,83 @@ describe("househelp server authorization and progress persistence", () => {
     expect(repository.listVisible(actor).map(({ id }) => id)).toEqual(["later-assignment"]);
   });
 
+  it("lists published household recipes even when there are no assigned tasks", () => {
+    client.prepare("UPDATE cooking_assignments SET status = 'done' WHERE assignee_id = ?")
+      .run(actor.userId);
+
+    expect(repository.listVisible(actor)).toEqual([]);
+    expect(repository.listCookableRecipes(actor)).toMatchObject([
+      {
+        recipeVersionId: DEMO_IDS.recipeVersion,
+        servings: 2,
+        translations: {
+          "en-IN": { dish: "Simple spinach", servingsSpeech: "for 2 people" },
+          "hi-IN": { dish: "सादा पालक", servingsSpeech: "2 लोगों के लिए" },
+        },
+      },
+    ]);
+  });
+
+  it("starts one resumable ad-hoc cooking run with pinned bilingual guidance", () => {
+    client.prepare("UPDATE cooking_assignments SET status = 'done' WHERE assignee_id = ?")
+      .run(actor.userId);
+    const now = new Date("2026-08-30T12:30:00.000Z");
+
+    const first = repository.startAdHocCooking(actor, DEMO_IDS.recipeVersion, "hi-IN", now);
+    const retry = repository.startAdHocCooking(actor, DEMO_IDS.recipeVersion, "hi-IN", now);
+
+    expect(retry.id).toBe(first.id);
+    expect(client.prepare(
+      `SELECT origin, assignee_id AS assigneeId, created_by AS createdBy,
+              scheduled_date AS scheduledDate, selected_locale AS selectedLocale
+       FROM cooking_assignments WHERE id = ?`,
+    ).get(first.id)).toMatchObject({
+      origin: "ad_hoc",
+      assigneeId: actor.userId,
+      createdBy: actor.userId,
+      scheduledDate: "2026-08-30",
+      selectedLocale: "hi-IN",
+    });
+    expect(client.prepare(
+      "SELECT COUNT(*) AS count FROM househelp_assignment_snapshots WHERE assignment_id = ?",
+    ).get(first.id)).toEqual({ count: 2 });
+    expect(repository.getVisible(actor, first.id)).toMatchObject({
+      snapshot: {
+        assignment: { id: first.id, recipeVersionId: DEMO_IDS.recipeVersion },
+        translations: { "hi-IN": { dish: "सादा पालक" } },
+      },
+      progress: null,
+    });
+  });
+
+  it("does not expose or start unpublished recipes", () => {
+    client.prepare("UPDATE recipe_versions SET review_status = 'needs_review' WHERE id = ?")
+      .run(DEMO_IDS.recipeVersion);
+
+    expect(repository.listCookableRecipes(actor)).toEqual([]);
+    expect(() => repository.startAdHocCooking(
+      actor,
+      DEMO_IDS.recipeVersion,
+      "en-IN",
+    )).toThrowError(/published household recipe/i);
+  });
+
+  it("keeps household recipe browsing and ad-hoc starts househelp-only", () => {
+    const homeowner: HouseholdActor = {
+      userId: DEMO_IDS.homeowner,
+      householdId: DEMO_IDS.household,
+      membershipId: DEMO_IDS.homeownerMembership,
+      role: "homeowner",
+    };
+
+    expect(() => repository.listCookableRecipes(homeowner)).toThrowError(HousehelpAccessError);
+    expect(() => repository.startAdHocCooking(
+      homeowner,
+      DEMO_IDS.recipeVersion,
+      "en-IN",
+    )).toThrowError(HousehelpAccessError);
+  });
+
   it("skips an incomplete legacy assignment when choosing the next cooking task", () => {
     client.prepare(
       `INSERT INTO cooking_assignments

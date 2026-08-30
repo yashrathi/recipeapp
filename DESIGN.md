@@ -81,9 +81,9 @@ Househelp screens use one focal visual at a time. Audio remains authoritative; t
 - Use short verbs: `Add`, `Review`, `Assign`, `Start`, `Done`, `Ask for help`.
 - Househelp labels are one to three words where possible. Text remains as a visual confirmation but is not the primary instruction channel.
 - Automatically speak the current task, ingredient, or step on entry. A large `Repeat` control is always available.
-- Present assigned dishes as an audio-first, one-item-at-a-time menu. Speak the date, meal, target time, and `Start`/`Resume` action; `Next` cycles through the remaining assigned dishes.
+- Present assignments and published household recipes as one audio-first, one-item-at-a-time cooking menu. Assigned items speak date, meal, target time, and `Start`/`Resume`; library items say `Household recipe` and offer `Cook now`. `Next` cycles through both without exposing drafts or archived recipes.
 - During cooking, `Go back` reviews the previous instruction without rewinding or duplicating saved progress. The completion screen can return to the final instruction until `Done` is pressed.
-- After `Done` is persisted or safely queued, return to the assigned-dish menu instead of leaving the worker on a terminal completion screen. This return has a bounded fallback and never depends indefinitely on speech completion.
+- After `Done` is persisted or safely queued, return to the cooking menu instead of leaving the worker on a terminal completion screen. The completed run is no longer active, while its published recipe remains available for a future request. This return has a bounded fallback and never depends indefinitely on speech completion.
 - The persistent speaker control becomes `Stop` while speech is playing and returns to `Repeat` when speech ends.
 - On activation, speak the control and outcome: `Missing. The homeowner has been told.`
 - Keep spoken steps short, concrete, and ordered: action + quantity + ingredient + timing/heat when relevant.

@@ -9,8 +9,8 @@ export default function HomePage() {
         <p className="eyebrow">Milestone 1 foundation</p>
         <h1 id="page-title">Household Recipe Assistant</h1>
         <p className="lede">
-          Import or enter a recipe, review exact bilingual cooking guidance, and assign an
-          immutable version to the household cook mode with server-enforced role boundaries.
+          Import or enter a recipe, review exact bilingual cooking guidance, and publish an
+          immutable version for assigned or in-person-request cooking with server-enforced role boundaries.
         </p>
       </section>
 
@@ -34,7 +34,7 @@ export default function HomePage() {
         <article className="role-card">
           <span className="role-mark role-mark-help" aria-hidden="true">A</span>
           <h3>Househelp</h3>
-          <p>Only assigned cooking work, progress and issue reporting.</p>
+          <p>Assigned cooking work, published household recipes, progress and issue reporting.</p>
           <form action="/api/demo/session" method="post">
             <input type="hidden" name="role" value="househelp" />
             <button type="submit">Enter househelp shell</button>

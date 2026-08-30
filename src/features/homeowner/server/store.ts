@@ -3,7 +3,7 @@ import type { z } from "zod";
 
 import type { ExtractionEvidence } from "@/domain/contracts";
 import { ExtractionWarningSchema } from "@/domain/contracts";
-import type { AssignmentSnapshot, HousehelpLocale } from "@/features/househelp/types";
+import { buildAssignmentSnapshot } from "@/features/househelp/server/snapshot";
 import {
   AssignmentInputSchema,
   DraftEditInputSchema,
@@ -175,28 +175,6 @@ function sourceAttribution(result: ImportedRecipeResult): string {
   if (publisher) return publisher;
   if (result.source.sourceType === "youtube") return `YouTube video: ${result.recipe.title.displayText}`;
   return `Imported from ${new URL(result.source.canonicalUrl).hostname}`;
-}
-
-const localeMeal: Record<HousehelpLocale, Record<AssignmentInput["mealSlot"], string>> = {
-  "en-IN": { breakfast: "breakfast", lunch: "lunch", snack: "snack", dinner: "dinner" },
-  "hi-IN": { breakfast: "नाश्ता", lunch: "दोपहर का खाना", snack: "नाश्ता", dinner: "रात का खाना" },
-};
-
-function servingsSpeech(servings: number, locale: HousehelpLocale): string {
-  const number = new Intl.NumberFormat(locale).format(servings);
-  return locale === "hi-IN" ? `${number} लोगों के लिए` : `for ${number} people`;
-}
-
-function targetTimeSpeech(targetTime: string | null, locale: HousehelpLocale): string {
-  if (!targetTime) return locale === "hi-IN" ? "कोई तय समय नहीं" : "no target time";
-  const [hour, minute] = targetTime.split(":").map(Number);
-  const time = new Intl.DateTimeFormat(locale, {
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "UTC",
-  })
-    .format(new Date(Date.UTC(2026, 0, 1, hour, minute)));
-  return locale === "hi-IN" ? `${time} बजे` : `at ${time}`;
 }
 
 export class HomeownerStore {
@@ -887,152 +865,6 @@ export class HomeownerStore {
     ).all(actor.householdId) as Array<{ id: string; name: string; spokenLocale: string }>;
   }
 
-  private buildAssignmentSnapshot(
-    assignmentId: string,
-    assigneeId: string,
-    recipeVersionId: string,
-    mealSlot: AssignmentInput["mealSlot"],
-    targetTime: string | null,
-    targetServings: number,
-    selectedLocale: HousehelpLocale,
-    notes: Record<HousehelpLocale, string>,
-  ): AssignmentSnapshot {
-    const recipe = this.client.prepare(
-      `SELECT v.recipe_id AS recipeId, s.attribution
-       FROM recipe_versions v
-       JOIN recipe_sources s ON s.id = v.source_id
-       WHERE v.id = ?`,
-    ).get(recipeVersionId) as { recipeId: string; attribution: string };
-    const ingredients = this.client.prepare(
-      `SELECT id, ingredient_text AS ingredientText, display_line AS displayLine,
-              quantity_json AS quantityJson, preparation_note AS preparation
-       FROM recipe_ingredients WHERE recipe_version_id = ? ORDER BY sort_order`,
-    ).all(recipeVersionId) as Array<{
-      id: string;
-      ingredientText: string;
-      displayLine: string;
-      quantityJson: string | null;
-      preparation: string | null;
-    }>;
-    const steps = this.client.prepare(
-      `SELECT id, duration_seconds AS durationSeconds
-       FROM recipe_steps WHERE recipe_version_id = ? ORDER BY sort_order`,
-    ).all(recipeVersionId) as Array<{ id: string; durationSeconds: number | null }>;
-    const guidanceRows = this.client.prepare(
-      `SELECT guidance_key AS guidanceKey, locale, speakable_text AS speakableText
-       FROM spoken_guidance
-       WHERE recipe_version_id = ? AND review_status = 'reviewed'`,
-    ).all(recipeVersionId) as Array<{
-      guidanceKey: string;
-      locale: HousehelpLocale;
-      speakableText: string;
-    }>;
-    const guidance = new Map(
-      guidanceRows.map((row) => [`${row.guidanceKey}:${row.locale}`, row.speakableText]),
-    );
-    const exact = (key: string, locale: HousehelpLocale) => {
-      const text = guidance.get(`${key}:${locale}`);
-      if (!text) {
-        throw new HomeownerValidationError(
-          "Every assignment needs complete reviewed English and Hindi guidance.",
-          "BILINGUAL_GUIDANCE_REQUIRED",
-        );
-      }
-      return text;
-    };
-    const translations = (locale: HousehelpLocale): AssignmentSnapshot["translations"][HousehelpLocale] => ({
-      dish: exact("recipe.dish", locale),
-      meal: localeMeal[locale][mealSlot],
-      servingsSpeech: servingsSpeech(targetServings, locale),
-      targetTimeSpeech: targetTimeSpeech(targetTime, locale),
-      note: notes[locale],
-      ingredients: Object.fromEntries(ingredients.map((ingredient) => {
-        const speech = exact(`ingredient.${ingredient.id}`, locale);
-        return [ingredient.id, {
-          singular: ingredient.ingredientText,
-          plural: ingredient.ingredientText,
-          quantitySpeech: speech,
-          preparation: ingredient.preparation ?? "",
-          visualDescription: speech,
-        }];
-      })),
-      steps: Object.fromEntries(steps.map((step) => {
-        const instruction = exact(`cook.step.${step.id}`, locale);
-        return [step.id, {
-          instruction,
-          visualDescription: instruction,
-          ...(step.durationSeconds
-            ? { durationSpeech: locale === "hi-IN"
-              ? `${new Intl.NumberFormat(locale).format(step.durationSeconds)} सेकंड`
-              : `${new Intl.NumberFormat(locale).format(step.durationSeconds)} seconds` }
-            : {}),
-        }];
-      })),
-    });
-
-    return {
-      schemaVersion: 1,
-      assignment: {
-        id: assignmentId,
-        assigneeId,
-        recipeVersionId,
-        status: "scheduled",
-        meal: mealSlot,
-        targetTime: targetTime ?? "",
-        servings: targetServings,
-        selectedLocale,
-        translationStatus: { "en-IN": "reviewed", "hi-IN": "reviewed" },
-      },
-      recipe: {
-        id: recipe.recipeId,
-        versionId: recipeVersionId,
-        sourceAttribution: recipe.attribution,
-        ingredients: ingredients.map((ingredient) => ({
-          id: ingredient.id,
-          quantity: ingredient.quantityJson
-            ? JSON.parse(ingredient.quantityJson) as Record<string, string | number>
-            : { text: ingredient.displayLine },
-          visualAssetId: null,
-        })),
-        steps: steps.map((step) => ({
-          id: step.id,
-          action: "state",
-          timer: step.durationSeconds
-            ? { durationSeconds: step.durationSeconds, startMode: "explicit" as const }
-            : null,
-          visualAssetId: null,
-          mediaAssetId: null,
-        })),
-      },
-      translations: { "en-IN": translations("en-IN"), "hi-IN": translations("hi-IN") },
-      visualAssets: [
-        {
-          id: "state-ingredient-bundled",
-          kind: "state_icon",
-          purpose: "show_state",
-          verification: "approved",
-          rights: "bundled",
-          attribution: "Application icon set",
-          spokenDescriptionPath: null,
-        },
-        {
-          id: "state-dish-bundled",
-          kind: "state_icon",
-          purpose: "show_state",
-          verification: "approved",
-          rights: "bundled",
-          attribution: "Application icon set",
-          spokenDescriptionPath: null,
-        },
-      ],
-      fallbackIcons: {
-        ingredient: "state-ingredient-bundled",
-        actions: { state: "state-dish-bundled" },
-      },
-      mediaAssets: [],
-    };
-  }
-
   async createAssignment(actor: HouseholdActor, input: AssignmentInput): Promise<{ id: string; guidanceReady: boolean }> {
     this.requireHomeowner(actor);
     authorize(actor, "assignment:manage", { householdId: actor.householdId });
@@ -1117,16 +949,16 @@ export class HomeownerStore {
          VALUES (?, ?, ?, ?, ?, ?)`,
       );
       for (const locale of ["en-IN", "hi-IN"] as const) {
-        const snapshot = this.buildAssignmentSnapshot(
-          id,
-          parsed.assigneeId,
-          parsed.recipeVersionId,
-          parsed.mealSlot,
-          parsed.targetTime || null,
-          parsed.targetServings,
-          locale,
-          { "en-IN": parsed.notesEnglish ?? "", "hi-IN": parsed.notesHindi ?? "" },
-        );
+        const snapshot = buildAssignmentSnapshot(this.client, {
+          assignmentId: id,
+          assigneeId: parsed.assigneeId,
+          recipeVersionId: parsed.recipeVersionId,
+          mealSlot: parsed.mealSlot,
+          targetTime: parsed.targetTime || null,
+          targetServings: parsed.targetServings,
+          selectedLocale: locale,
+          notes: { "en-IN": parsed.notesEnglish ?? "", "hi-IN": parsed.notesHindi ?? "" },
+        });
         insertSnapshot.run(id, parsed.recipeVersionId, locale, JSON.stringify(snapshot), now, now);
       }
     })();
