@@ -1,0 +1,56 @@
+.page { width: min(100% - 2rem, 72rem); margin: 0 auto; padding: 2rem 0 4rem; }
+.breadcrumb { display: inline-flex; min-height: 44px; align-items: center; color: var(--forest); font-weight: 800; text-underline-offset: 0.2rem; }
+.header { max-width: 48rem; margin: 1rem 0 1.5rem; }
+.header h1 { margin: 0.2rem 0 0.7rem; font-family: Georgia, serif; font-size: clamp(2.2rem, 6vw, 4.4rem); line-height: 0.98; letter-spacing: -0.04em; }
+.header p:last-child { color: var(--muted); font-size: 1.06rem; }
+.eyebrow { margin: 0; color: var(--forest); font-size: 0.76rem; font-weight: 900; letter-spacing: 0.11em; text-transform: uppercase; }
+.workspace { display: grid; gap: 1rem; }
+.panel { border: 1px solid var(--line); border-radius: 1.2rem; padding: clamp(1.2rem, 4vw, 2rem); background: rgb(255 254 249 / 94%); box-shadow: 0 16px 45px rgb(44 52 46 / 6%); }
+.sectionHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.sectionHeading h2 { margin: 0.2rem 0 0; font-family: Georgia, serif; font-size: clamp(1.55rem, 4vw, 2.2rem); }
+.sectionHeading > span { border-radius: 999px; padding: 0.35rem 0.65rem; background: #e5efe7; color: var(--forest-dark); font-size: 0.78rem; font-weight: 850; }
+.addForm { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(10rem, 0.8fr) auto; gap: 0.45rem 0.7rem; align-items: end; }
+.addForm label { font-weight: 800; }
+.addForm label:nth-of-type(2) { grid-column: 2; }
+.addForm label span { color: var(--muted); font-size: 0.8rem; font-weight: 600; }
+.addForm input { min-height: 50px; border: 1px solid var(--line); border-radius: 0.75rem; padding: 0.7rem 0.8rem; background: white; color: var(--ink); font: inherit; }
+.primaryButton, .secondaryButton, .primaryLink, .textButton, .removeButton { min-height: 48px; border-radius: 0.75rem; padding: 0.7rem 1rem; font: inherit; font-weight: 850; cursor: pointer; }
+.primaryButton, .primaryLink { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--forest); background: var(--forest); color: white; text-decoration: none; }
+.secondaryButton { border: 1px solid var(--line); background: var(--paper); color: var(--ink); }
+.textButton, .removeButton { border: 0; background: transparent; color: var(--forest); text-decoration: underline; text-underline-offset: 0.2rem; }
+.removeButton { color: var(--red); }
+.primaryButton:disabled, .secondaryButton:disabled, .removeButton:disabled, .textButton:disabled { cursor: not-allowed; opacity: 0.55; }
+.itemList { display: grid; gap: 0.8rem; margin: 0; padding: 0; list-style: none; }
+.itemList > li { display: grid; gap: 0.8rem; border: 1px solid var(--line); border-radius: 0.9rem; padding: 1rem; background: var(--paper); }
+.itemMain { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.itemMain h3, .itemMain p { margin: 0; }
+.itemMain p { margin-top: 0.2rem; color: var(--muted); }
+.priceCard { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.25rem 1rem; border-top: 1px solid var(--line); padding-top: 0.8rem; }
+.priceCard > div:first-child { display: grid; gap: 0.15rem; }
+.priceCard span, .priceCard small, .priceEmpty, .finePrint { color: var(--muted); font-size: 0.84rem; }
+.priceCard small { grid-column: 1 / -1; }
+.priceValue { display: flex; align-items: baseline; gap: 0.5rem; }
+.priceValue strong { color: var(--forest); font-size: 1.25rem; }
+.priceEmpty { margin: 0; border-top: 1px solid var(--line); padding-top: 0.8rem; }
+.emptyState { margin: 0; color: var(--muted); }
+.connectCallout { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.connectCallout p { margin: 0; }
+.priceControls { display: grid; gap: 0.8rem; }
+.addressList { display: grid; gap: 0.55rem; margin: 0; border: 0; padding: 0; }
+.addressList legend { margin-bottom: 0.6rem; font-weight: 900; }
+.addressList label { display: flex; min-height: 52px; align-items: flex-start; gap: 0.7rem; border: 1px solid var(--line); border-radius: 0.8rem; padding: 0.75rem; cursor: pointer; }
+.addressList input { width: 1.15rem; height: 1.15rem; flex: 0 0 auto; accent-color: var(--forest); }
+.addressList span { display: grid; gap: 0.15rem; }
+.addressList small { color: var(--muted); }
+.finePrint { margin: 0.9rem 0 0; }
+.errorPanel, .successPanel { margin: 0; border-radius: 0.9rem; padding: 1rem; font-weight: 750; }
+.errorPanel { border: 1px solid #d9aaa3; background: #fff3f0; color: #71342c; }
+.successPanel { border: 1px solid #9bbca5; background: #eef7ef; color: var(--forest-dark); }
+
+@media (max-width: 48rem) {
+  .addForm { grid-template-columns: 1fr; }
+  .addForm label:nth-of-type(2) { grid-column: 1; }
+  .connectCallout, .itemMain { align-items: stretch; flex-direction: column; }
+  .priceCard { grid-template-columns: 1fr; }
+  .priceCard small { grid-column: 1; }
+}

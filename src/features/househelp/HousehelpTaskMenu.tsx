@@ -258,6 +258,14 @@ export function HousehelpTaskMenu({
     ]);
   }
 
+  async function openShoppingList() {
+    await play([{
+      locale,
+      text: locale === "hi-IN" ? "खरीदारी की सूची" : "Shopping list",
+    }]);
+    router.push("/househelp/shopping");
+  }
+
   const topBar = ["menu", "language"].includes(view) ? (
     <header className={styles.topBar}>
       {view === "menu" ? (
@@ -360,6 +368,9 @@ export function HousehelpTaskMenu({
               {label(locale, "next")} <span aria-hidden="true">→</span>
             </button>
           ) : null}
+          <button className={styles.secondaryButton} type="button" onClick={() => void openShoppingList()}>
+            {locale === "hi-IN" ? "खरीदारी की सूची" : "Shopping list"}
+          </button>
         </div>
       </section>
     );
@@ -381,6 +392,9 @@ export function HousehelpTaskMenu({
         <p className={styles.bigMeta}>{formatMessage(locale, "menu.empty")}</p>
         <button className={styles.secondaryButton} type="button" onClick={() => void activateAudio()}>
           {label(locale, "activate_audio")}
+        </button>
+        <button className={styles.secondaryButton} type="button" onClick={() => void openShoppingList()}>
+          {locale === "hi-IN" ? "खरीदारी की सूची" : "Shopping list"}
         </button>
       </section>
     );

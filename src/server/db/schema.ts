@@ -227,6 +227,42 @@ export const cookingAssignments = sqliteTable("cooking_assignments", {
   updatedAt: text("updated_at").notNull(),
 });
 
+export const shoppingLists = sqliteTable(
+  "shopping_lists",
+  {
+    id: text("id").primaryKey(),
+    householdId: text("household_id").notNull().references(() => households.id),
+    createdBy: text("created_by").notNull().references(() => users.id),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [uniqueIndex("shopping_lists_household_unique").on(table.householdId)],
+);
+
+export const shoppingListItems = sqliteTable(
+  "shopping_list_items",
+  {
+    id: text("id").primaryKey(),
+    shoppingListId: text("shopping_list_id").notNull().references(() => shoppingLists.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    normalizedName: text("normalized_name").notNull(),
+    quantityNote: text("quantity_note"),
+    priceStatus: text("price_status", { enum: ["unchecked", "matched", "not_found", "error"] }).notNull(),
+    providerProductId: text("provider_product_id"),
+    providerSpinId: text("provider_spin_id"),
+    productName: text("product_name"),
+    brandName: text("brand_name"),
+    packSize: text("pack_size"),
+    mrp: real("mrp"),
+    offerPrice: real("offer_price"),
+    available: integer("available", { mode: "boolean" }),
+    priceCheckedAt: text("price_checked_at"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [uniqueIndex("shopping_list_items_name_unique").on(table.shoppingListId, table.normalizedName)],
+);
+
 export const audioReadiness = sqliteTable(
   "audio_readiness",
   {
