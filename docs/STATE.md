@@ -13,7 +13,7 @@ Milestone 2 is approved and in implementation: broaden the reviewed recipe-impor
 - Visible import task `01a05153-f172-7252-8c79-bea624f25d53`, branch `feature/web-recipe-import`, at `/Users/yashmac16/.codex/worktrees/1283/Recipe App`
 - Visible househelp task `01a05153-f6f9-71c0-9997-699f2235d8ac`, branch `feature/househelp-cook-mode`, at `/Users/yashmac16/.codex/worktrees/85f5/Recipe App`
 - Visible acceptance-review task `01a05154-027f-7cc2-a232-a7dedd36ac8c`, branch `review/milestone-1-acceptance`, at `/Users/yashmac16/.codex/worktrees/840f/Recipe App`
-- Active Milestone 2 worker `/root/broad_source_import`, branch `feature/broad-source-import`, at `/Users/yashmac16/Documents/ChatGPT/Recipe App-broad-source-import`
+- Completed Milestone 2 worker `/root/broad_source_import`, branch `feature/broad-source-import`, at `/Users/yashmac16/Documents/ChatGPT/Recipe App-broad-source-import`; commits `48ad00d` (safe Firecrawl webpage fallback) and `dbe45a9` (OpenAI/YouTube transcript import) await integration authorization.
 
 All Milestone 1 worker commits are cherry-picked to `main`. Those worktrees are retained only for review history. The Milestone 2 worker output must not be merged without explicit authorization.
 
@@ -24,11 +24,12 @@ All Milestone 1 worker commits are cherry-picked to `main`. Those worktrees are 
 - A househelp sees only their next assigned task and can use English/Hindi audio setup, one-at-a-time ingredient checks, automatically spoken steps, Repeat/Stop/Help/language controls, timers, resume, issue reporting, and completion on a narrow phone. Progress is persisted server-side and mirrored in a bounded local retry queue for intermittent connectivity.
 - Visuals are deliberately light: bundled focal state/action illustrations have accessible equivalents, while spoken guidance remains authoritative.
 - `npm run verify` passes lint, strict TypeScript, 135 unit/integration tests, and the production build. Playwright passes 10 desktop/mobile flows with 2 intentional desktop skips for phone-only cook-mode cases. Production smoke checks return `200` for landing/health and `404` for the demo-session endpoint.
+- On the unmerged Milestone 2 worker branch, coordinator verification passes 17 files / 179 tests and the production build; worker Playwright verification passes 10 flows with 2 intentional desktop skips. A live Pinch-of-Yum import succeeds through repaired direct fetch with deterministic extraction (12 ingredients, 7 steps), and a bounded live OpenAI structured extraction succeeds without exposing source text or credentials.
 - Git remote `origin` points to `https://github.com/yashrathi/recipeapp.git`; the remote currently has no branches and nothing has been pushed.
 
 ## Blockers
 
-- No implementation blocker. Live provider acceptance requires server-side `FIRECRAWL_API_KEY` and `OPENAI_API_KEY`; deterministic tests must not require either secret.
+- Implementation and deterministic acceptance are complete on the worker branch. Live YouTube acceptance is blocked because Firecrawl rejects the currently saved credential with `FIRECRAWL_AUTH_FAILED`; the saved OpenAI credential is valid. Replace only `FIRECRAWL_API_KEY`, then rerun the bounded YouTube smoke.
 - Official Swiggy or alternative grocery-provider API/partnership capability remains unverified and out of scope.
 
 ## Risks
@@ -43,4 +44,4 @@ All Milestone 1 worker commits are cherry-picked to `main`. Those worktrees are 
 
 ## Immediate next step
 
-Complete the approved Milestone 2 worker slices and acceptance review, then request explicit authorization before integrating the worker branch into `main`. Real-device househelp sessions remain required before production selection.
+Replace the rejected local Firecrawl credential, run one bounded live captioned-recipe YouTube smoke, finish coordinator review, and request explicit authorization before integrating `48ad00d` and `dbe45a9` into `main`. Real-device househelp sessions remain required before production selection.
