@@ -96,7 +96,7 @@ Verified `main` is pushed to the private GitHub repository, but no deployment ta
 - Confirm every screen ID referenced in a workflow exists in `docs/PRODUCT-PLAN.md`.
 - Confirm wireframes cover the core homeowner import/review/assign/shop loop and househelp prepare/cook loop.
 - Confirm provider-dependent behavior is labeled as discovery or fallback rather than guaranteed.
-- Confirm the househelp flow includes first-tap audio activation, spoken labels/results, automatic next-step speech, replay, language change, offline readiness, and a recoverable audio-failure path.
+- Confirm the househelp flow includes first-tap audio activation, spoken labels/results, automatic next-step speech, replay, language change, offline readiness, a recoverable audio-failure path, local-only previous-step review, and a `Cooking menu` escape that works while completion speech is stalled.
 - Confirm every househelp visual is purposeful, verified, accessible, rights-aware, and safely replaceable by spoken guidance if unavailable.
 - Confirm current facts live in `STATE`, completed work in `HISTORY`, decisions in `DECISIONS`, and durable gotchas in `MEMORY`.
 

@@ -174,7 +174,8 @@
 }
 
 .primaryButton:hover { background: var(--hh-green-dark); }
-.primaryButton:disabled { cursor: default; opacity: 0.55; }
+.primaryButton:disabled,
+.secondaryButton:disabled { cursor: default; opacity: 0.55; }
 
 .warningButton {
   border-color: #e3b6a9;
@@ -195,6 +196,13 @@
 .actionStack {
   display: grid;
   gap: 0.8rem;
+}
+
+.navigationRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
 }
 
 .helpButton {

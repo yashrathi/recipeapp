@@ -334,11 +334,13 @@ One instruction fills the screen. On entry and after every `Next`, the full new 
 │  │              NEXT  →              │  │
 │  └────────────────────────────────────┘  │
 │                                          │
+│  [ ← Go back ]       [ ⌂ Cooking menu ] │
+│                                          │
 │                 ? Help                   │
 └──────────────────────────────────────────┘
 ```
 
-Tap response: “Next. Now stir on medium heat for two minutes.” If the new step needs a timer, the timer starts only after the spoken instruction explains it. `Show how` opens a verified image or user-initiated source video at the relevant timestamp; it is absent when no trustworthy media exists.
+Tap response: “Next. Now stir on medium heat for two minutes.” If the new step needs a timer, the timer starts only after the spoken instruction explains it. `Go back` speaks and shows the previous instruction without changing server progress; returning forward through an already reached step does not save it again. `Cooking menu` is always available. `Show how` opens a verified image or user-initiated source video at the relevant timestamp; it is absent when no trustworthy media exists.
 
 While speech is playing, the top-right speaker control changes from `Repeat` to `Stop`, so the user can silence it immediately.
 
@@ -373,11 +375,13 @@ The app says: “Cooking complete. Paneer butter masala is ready. Press Done to 
 │  │               DONE                │  │
 │  └────────────────────────────────────┘  │
 │                                          │
+│  [ ← Go back ]       [ ⌂ Cooking menu ] │
+│                                          │
 │            ? There was a problem         │
 └──────────────────────────────────────────┘
 ```
 
-Tap response: “Done. The homeowner has been told.” The app then returns to the cooking menu; the completed assignment is absent, and the next assigned dish or no-task state is presented.
+Tap response: “Done. The homeowner has been told.” The app then returns to the cooking menu; the completed assignment is absent, and the next assigned dish or no-task state is presented. `Go back` remains available before confirmation. `Cooking menu` remains available throughout completion, and automatic return has a bounded fallback if confirmation speech never resolves.
 
 ## Spoken interaction examples
 

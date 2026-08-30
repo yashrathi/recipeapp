@@ -46,6 +46,8 @@ function stateFromGiven(given: Record<string, unknown>, locale?: HousehelpLocale
   state.ingredientIndex = (given.ingredientIndex as number) ?? state.ingredientIndex;
   state.stepIndex =
     (given.stepIndex as number) ?? (given.persistedStepIndex as number) ?? state.stepIndex;
+  state.furthestStepIndex =
+    (given.furthestStepIndex as number) ?? state.stepIndex;
   state.lastPersistedRevision = (given.revision as number) ?? state.lastPersistedRevision;
   state.sessionId = Object.hasOwn(given, "sessionId")
     ? (given.sessionId as string | null)
@@ -241,6 +243,32 @@ describe("all 26 frozen interaction cases", () => {
     const completed = runCase(cases.find(({ id }) => id === "final_next_enters_completion_then_done_notifies_once")!);
     expect(completed.state.view).toBe("completion");
     expect(completed.state.completed).toBe(true);
+  });
+
+  it("reviews an earlier cooking step without rewinding saved progress", () => {
+    const current = stateFromGiven({ view: "cook", stepIndex: 3, revision: 9 });
+    const previous = transitionHousehelp(current, { type: "BACK" }, { snapshot });
+
+    expect(previous.state.view).toBe("cook");
+    expect(previous.state.stepIndex).toBe(2);
+    expect(previous.persistence).toEqual([]);
+
+    const forward = transitionHousehelp(previous.state, {
+      type: "NEXT",
+      idempotencyKey: "review:next:step-stir",
+    }, { snapshot });
+    expect(forward.state.stepIndex).toBe(3);
+    expect(forward.state.lastPersistedRevision).toBe(9);
+    expect(forward.persistence).toEqual([]);
+  });
+
+  it("returns from completion to the final cooking instruction before Done", () => {
+    const completion = stateFromGiven({ view: "completion", stepIndex: 3, revision: 10 });
+    const back = transitionHousehelp(completion, { type: "BACK" }, { snapshot });
+
+    expect(back.state.view).toBe("cook");
+    expect(back.state.stepIndex).toBe(3);
+    expect(back.persistence).toEqual([]);
   });
 
   it("serializes the reducer output for every fixture case through the speech queue", async () => {

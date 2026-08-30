@@ -113,11 +113,11 @@ Failure path: show `Transcript unavailable` and offer retry/manual entry instead
 4. Ingredient check presents one item at a time with a verified ingredient photo when available and asks a spoken question such as `Do you have one cup of spinach?`
 5. Tapping `Have it`, `Missing`, or `Repeat` speaks the control label. `Missing` also confirms that the homeowner was notified.
 6. Cook mode records the active recipe version, shows one action visual, and automatically speaks the first instruction.
-7. Tapping `Next` says `Next`, advances, and speaks the full next instruction. `Repeat` replays without changing progress; `Help` speaks the available help choices.
+7. Tapping `Next` says `Next`, advances, and speaks the full next instruction. `Go back` reviews an earlier instruction without rewinding saved progress. `Repeat` replays without changing progress; `Help` speaks the available help choices.
 8. A user may tap a verified step image or video for help. Motion never auto-plays and never blocks `Repeat`, `Next`, or `Help`.
 9. Timers announce start, remaining-time checkpoints only when useful, and completion without overlapping instructions.
 10. Progress auto-saves. After interruption or reconnection, the app announces the restored step before accepting input.
-11. Completion is spoken and requires one large confirmation. Homeowner sees status: not started, preparing, cooking, blocked, or done; after confirmation the househelp returns to the cooking menu and the completed task is no longer offered.
+11. Completion is spoken and requires one large confirmation. Homeowner sees status: not started, preparing, cooking, blocked, or done; after confirmation the househelp returns to the cooking menu and the completed task is no longer offered. A persistent `Cooking menu` control and bounded automatic fallback keep this exit usable even when sync or speech stalls.
 
 The core path must remain operable by listening and tapping. Text and simple icons reinforce the spoken interface but are not required to understand it.
 
