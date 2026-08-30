@@ -4,7 +4,7 @@ Updated: 2026-08-30
 
 ## Current milestone
 
-Milestones 1 and 2, English-first automatic Hindi, and the requested househelp cooking-menu/one-time-language repair are integrated locally on `main`. Combined post-merge verification is in progress.
+Milestones 1 and 2, English-first automatic Hindi, and the requested househelp cooking-menu/one-time-language repair are integrated locally on `main`. Combined lint, strict TypeScript, unit tests, and production build pass.
 
 ## Integrated task branches and worktrees
 
@@ -26,7 +26,7 @@ All accepted Milestone 1, Milestone 2, automatic-Hindi, and househelp-flow work 
 - A househelp hears and browses active assignments and current published household recipes one at a time. They can choose/resume assigned work or use `Cook now` after an in-person request, review earlier steps locally, and return to the menu explicitly or after `Done`.
 - Spoken-language confirmation occurs once per device. The selected locale is reused when entering a task, resuming after reload, and returning after completion; language selection reappears only through the explicit change control.
 - Visuals are deliberately light: bundled focal state/action illustrations have accessible equivalents, while spoken guidance remains authoritative.
-- The combined integration is awaiting its full post-merge verification baseline.
+- Combined `npm run verify` passes lint, strict TypeScript, 19 files / 199 tests, and the production build. The full combined Playwright rerun remains pending because an existing development server owns this checkout's `.next` directory; the isolated automatic-Hindi and househelp-menu branches passed their respective desktop/mobile suites before integration.
 - The exact Pinch-of-Yum page succeeds through both repaired direct fetch and forced Firecrawl fallback with deterministic extraction (12 ingredients, 7 steps). A live captioned YouTube recipe succeeds through Firecrawl transcript retrieval and OpenAI evidence extraction as `partial_success` (3 evidenced ingredients, 12 steps, language recorded, no timestamps fabricated). Credentials and raw source/transcript text were not printed or persisted by the smoke harness.
 - The private GitHub repository is `https://github.com/yashrathi/recipeapp.git` with default branch `main`; the automatic-Hindi and househelp-flow integrations are currently local and have not been pushed.
 
@@ -51,4 +51,4 @@ All accepted Milestone 1, Milestone 2, automatic-Hindi, and househelp-flow work 
 
 ## Immediate next step
 
-Complete combined post-merge verification, then select a compatible public hosting target, persistent datastore, and production identity approach. Real-device househelp sessions remain required before production launch.
+After the active development server is stopped, run the full combined Playwright suite. Then select a compatible public hosting target, persistent datastore, and production identity approach; real-device househelp sessions remain required before production launch.
