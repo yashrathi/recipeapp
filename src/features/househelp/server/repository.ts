@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import type Database from "better-sqlite3";
 
 import type { HouseholdActor } from "@/server/auth/policy";
@@ -13,7 +15,6 @@ interface AssignmentRow {
   recipe_version_id: string;
   selected_locale: "en-IN" | "hi-IN";
   status: string;
-  snapshot_json: string | null;
 }
 
 interface SessionRow {
@@ -27,6 +28,11 @@ interface SessionRow {
   status: string;
   revision: number;
   finished_at: string | null;
+}
+
+interface SnapshotRow {
+  recipe_version_id: string;
+  snapshot_json: string;
 }
 
 export class HousehelpAccessError extends Error {
@@ -64,7 +70,7 @@ export class HousehelpRepository {
       )
       .all(actor.householdId, actor.userId)
       .map((row) => {
-        const typed = row as Omit<AssignmentRow, "snapshot_json" | "household_id" | "assignee_id">;
+        const typed = row as Omit<AssignmentRow, "household_id" | "assignee_id">;
         return {
           id: typed.id,
           recipeVersionId: typed.recipe_version_id,
@@ -83,21 +89,12 @@ export class HousehelpRepository {
     if (["cancelled", "reassigned"].includes(assignment.status)) {
       throw new HousehelpAccessError(410, "This cooking task is no longer available.");
     }
-    if (!assignment.snapshot_json) {
-      throw new HousehelpAccessError(409, "The assigned guidance snapshot is not ready.");
-    }
     authorize(actor, "assignment:view", {
       householdId: assignment.household_id,
       assigneeId: assignment.assignee_id,
     });
 
-    const snapshot = JSON.parse(assignment.snapshot_json) as AssignmentSnapshot;
-    if (
-      snapshot.assignment.id !== assignment.id ||
-      snapshot.assignment.recipeVersionId !== assignment.recipe_version_id
-    ) {
-      throw new HousehelpAccessError(409, "The pinned assignment snapshot does not match.");
-    }
+    const snapshot = this.validatePinnedSnapshot(assignment, assignment.selected_locale);
     return { snapshot, progress: this.getProgress(assignment.id, snapshot) };
   }
 
@@ -122,6 +119,7 @@ export class HousehelpRepository {
       });
 
       if (mutation.type === "locale") {
+        this.validatePinnedSnapshot(assignment, mutation.locale);
         this.client.prepare("UPDATE users SET spoken_locale = ? WHERE id = ?").run(
           mutation.locale,
           actor.userId,
@@ -133,9 +131,25 @@ export class HousehelpRepository {
         return;
       }
 
+      const snapshot = this.validatePinnedSnapshot(assignment, assignment.selected_locale);
+      this.validateMutationReferences(snapshot, assignmentId, mutation);
+
       let session = this.findSession(assignmentId);
+      if (
+        session &&
+        (
+          !Number.isInteger(session.ingredient_index) ||
+          session.ingredient_index < 0 ||
+          session.ingredient_index >= snapshot.recipe.ingredients.length ||
+          !Number.isInteger(session.step_index) ||
+          session.step_index < 0 ||
+          session.step_index >= snapshot.recipe.steps.length
+        )
+      ) {
+        throw new HousehelpAccessError(409, "The saved progress indexes do not match the pinned assignment snapshot.");
+      }
       const idempotencyKey = "idempotencyKey" in mutation ? mutation.idempotencyKey : undefined;
-      if (idempotencyKey && this.hasIdempotencyKey(idempotencyKey)) return;
+      if (idempotencyKey && this.hasIdempotencyKey(assignmentId, idempotencyKey)) return;
 
       if (!session && mutation.type === "start") {
         const sessionId = `househelp-session-${assignmentId}`;
@@ -160,6 +174,9 @@ export class HousehelpRepository {
       if (!session && mutation.type !== "issue") {
         throw new HousehelpAccessError(409, "Start the cooking task before saving progress.");
       }
+      if (session && session.recipe_version_id !== assignment.recipe_version_id) {
+        throw new HousehelpAccessError(409, "The cooking session does not match the pinned recipe version.");
+      }
       const revision = session?.revision ?? 0;
       if (mutation.expectedRevision !== revision) {
         throw new HousehelpAccessError(409, `Progress changed from revision ${mutation.expectedRevision} to ${revision}.`);
@@ -169,7 +186,21 @@ export class HousehelpRepository {
       switch (mutation.type) {
         case "start":
           break;
-        case "ingredient":
+        case "ingredient": {
+          const currentIngredient = snapshot.recipe.ingredients[session!.ingredient_index];
+          if (!currentIngredient || currentIngredient.id !== mutation.ingredientId) {
+            throw new HousehelpAccessError(409, "The ingredient is not the current item in the pinned assignment snapshot.");
+          }
+          const expectedIndex = Math.min(
+            session!.ingredient_index + 1,
+            snapshot.recipe.ingredients.length - 1,
+          );
+          if (mutation.ingredientIndex !== expectedIndex) {
+            throw new HousehelpAccessError(409, "The ingredient index is inconsistent with saved progress.");
+          }
+          if (session!.status !== "preparing" || !["briefing", "ingredient"].includes(session!.current_view)) {
+            throw new HousehelpAccessError(409, "Ingredient decisions are no longer available for this session.");
+          }
           this.client.prepare(
             `INSERT INTO househelp_ingredient_decisions
                (session_id, ingredient_id, decision, decided_at)
@@ -187,7 +218,20 @@ export class HousehelpRepository {
             timestamp,
           });
           break;
-        case "start_cooking":
+        }
+        case "start_cooking": {
+          const finalIngredientIndex = snapshot.recipe.ingredients.length - 1;
+          const decisions = this.client.prepare(
+            "SELECT ingredient_id FROM househelp_ingredient_decisions WHERE session_id = ?",
+          ).all(session!.id) as Array<{ ingredient_id: string }>;
+          const decidedIds = new Set(decisions.map((decision) => decision.ingredient_id));
+          if (
+            session!.status !== "preparing" ||
+            session!.ingredient_index !== finalIngredientIndex ||
+            snapshot.recipe.ingredients.some((ingredient) => !decidedIds.has(ingredient.id))
+          ) {
+            throw new HousehelpAccessError(409, "Finish the pinned ingredient checklist before cooking.");
+          }
           acceptedRevision = revision + 1;
           this.updateSession(session!.id, {
             currentView: "cook",
@@ -200,14 +244,28 @@ export class HousehelpRepository {
           this.client.prepare("UPDATE cooking_assignments SET status = 'cooking', updated_at = ? WHERE id = ?")
             .run(timestamp, assignmentId);
           break;
+        }
         case "step": {
+          const currentStep = snapshot.recipe.steps[session!.step_index];
+          if (!currentStep || currentStep.id !== mutation.stepId) {
+            throw new HousehelpAccessError(409, "The submitted step is not the current step in the pinned assignment snapshot.");
+          }
+          const expectedIndex = Math.min(
+            session!.step_index + 1,
+            snapshot.recipe.steps.length - 1,
+          );
+          if (mutation.stepIndex !== expectedIndex) {
+            throw new HousehelpAccessError(409, "The step index is inconsistent with saved progress.");
+          }
+          if (session!.status !== "cooking" || session!.current_view !== "cook") {
+            throw new HousehelpAccessError(409, "Cooking steps are not available in the current session state.");
+          }
           this.client.prepare(
             `INSERT INTO househelp_step_progress (session_id, step_id, state, completed_at)
              VALUES (?, ?, 'complete', ?)
              ON CONFLICT(session_id, step_id) DO UPDATE SET state = 'complete', completed_at = excluded.completed_at`,
           ).run(session!.id, mutation.stepId, timestamp);
-          const snapshot = JSON.parse(assignment.snapshot_json!) as AssignmentSnapshot;
-          const finalStep = mutation.stepId === snapshot.recipe.steps.at(-1)?.id;
+          const finalStep = session!.step_index === snapshot.recipe.steps.length - 1;
           acceptedRevision = revision + 1;
           this.updateSession(session!.id, {
             currentView: finalStep ? "completion" : "cook",
@@ -220,7 +278,10 @@ export class HousehelpRepository {
           break;
         }
         case "issue": {
-          const issueId = `househelp-issue-${Buffer.from(mutation.idempotencyKey).toString("base64url").slice(0, 48)}`;
+          const issueHash = createHash("sha256")
+            .update(`${assignmentId}\0${mutation.idempotencyKey}`)
+            .digest("hex");
+          const issueId = `househelp-issue-${issueHash}`;
           this.client.prepare(
             `INSERT OR IGNORE INTO househelp_issues
                (id, assignment_id, session_id, reporter_id, issue_type, entity_id,
@@ -238,12 +299,22 @@ export class HousehelpRepository {
           );
           break;
         }
-        case "timer":
+        case "timer": {
+          const existingTimer = this.client.prepare(
+            "SELECT step_id FROM househelp_timers WHERE session_id = ? AND id = ?",
+          ).get(session!.id, mutation.timerId) as { step_id: string } | undefined;
+          const currentStep = snapshot.recipe.steps[session!.step_index];
+          if (
+            (existingTimer && existingTimer.step_id !== mutation.stepId) ||
+            (!existingTimer && currentStep?.id !== mutation.stepId)
+          ) {
+            throw new HousehelpAccessError(409, "The timer does not belong to the current saved step.");
+          }
           this.client.prepare(
             `INSERT INTO househelp_timers
                (id, session_id, step_id, status, duration_seconds, ends_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?)
-             ON CONFLICT(id) DO UPDATE SET
+             ON CONFLICT(session_id, id) DO UPDATE SET
                status = excluded.status, duration_seconds = excluded.duration_seconds,
                ends_at = excluded.ends_at, updated_at = excluded.updated_at`,
           ).run(
@@ -256,7 +327,20 @@ export class HousehelpRepository {
             timestamp,
           );
           break;
-        case "done":
+        }
+        case "done": {
+          const completedSteps = this.client.prepare(
+            `SELECT step_id FROM househelp_step_progress
+             WHERE session_id = ? AND state = 'complete'`,
+          ).all(session!.id) as Array<{ step_id: string }>;
+          const completedIds = new Set(completedSteps.map((step) => step.step_id));
+          if (
+            session!.current_view !== "completion" ||
+            session!.status !== "cooking" ||
+            snapshot.recipe.steps.some((step) => !completedIds.has(step.id))
+          ) {
+            throw new HousehelpAccessError(409, "Finish every pinned cooking step before completion.");
+          }
           acceptedRevision = revision + 1;
           this.client.prepare(
             `UPDATE househelp_cooking_sessions
@@ -266,6 +350,7 @@ export class HousehelpRepository {
           this.client.prepare("UPDATE cooking_assignments SET status = 'done', updated_at = ? WHERE id = ?")
             .run(timestamp, assignmentId);
           break;
+        }
       }
 
       if (idempotencyKey) {
@@ -285,10 +370,8 @@ export class HousehelpRepository {
   private findAssignment(actor: HouseholdActor, assignmentId: string): AssignmentRow | null {
     return (this.client.prepare(
       `SELECT a.id, a.household_id, a.assignee_id, a.recipe_version_id,
-              a.selected_locale, a.status, s.snapshot_json
+              a.selected_locale, a.status
        FROM cooking_assignments a
-       LEFT JOIN househelp_assignment_snapshots s
-         ON s.assignment_id = a.id AND s.locale = a.selected_locale
        WHERE a.id = ? AND a.household_id = ? AND a.assignee_id = ?`,
     ).get(assignmentId, actor.householdId, actor.userId) as AssignmentRow | undefined) ?? null;
   }
@@ -296,10 +379,8 @@ export class HousehelpRepository {
   private findNextAssignment(actor: HouseholdActor): AssignmentRow | null {
     return (this.client.prepare(
       `SELECT a.id, a.household_id, a.assignee_id, a.recipe_version_id,
-              a.selected_locale, a.status, s.snapshot_json
+              a.selected_locale, a.status
        FROM cooking_assignments a
-       LEFT JOIN househelp_assignment_snapshots s
-         ON s.assignment_id = a.id AND s.locale = a.selected_locale
        WHERE a.household_id = ? AND a.assignee_id = ?
          AND a.status NOT IN ('cancelled', 'reassigned')
        ORDER BY a.scheduled_date, a.target_time LIMIT 1`,
@@ -363,11 +444,115 @@ export class HousehelpRepository {
     };
   }
 
-  private hasIdempotencyKey(key: string): boolean {
+  private hasIdempotencyKey(assignmentId: string, key: string): boolean {
     return Boolean(
-      this.client.prepare("SELECT 1 FROM househelp_idempotency_keys WHERE idempotency_key = ?")
-        .get(key),
+      this.client.prepare(
+        `SELECT 1 FROM househelp_idempotency_keys
+         WHERE assignment_id = ? AND idempotency_key = ?`,
+      ).get(assignmentId, key),
     );
+  }
+
+  private validatePinnedSnapshot(
+    assignment: AssignmentRow,
+    locale: AssignmentRow["selected_locale"],
+  ): AssignmentSnapshot {
+    const row = this.client.prepare(
+      `SELECT recipe_version_id, snapshot_json
+       FROM househelp_assignment_snapshots
+       WHERE assignment_id = ? AND recipe_version_id = ? AND locale = ?`,
+    ).get(assignment.id, assignment.recipe_version_id, locale) as SnapshotRow | undefined;
+    if (!row) {
+      throw new HousehelpAccessError(409, "The assigned guidance snapshot is not ready for this language.");
+    }
+
+    let snapshot: AssignmentSnapshot;
+    try {
+      snapshot = JSON.parse(row.snapshot_json) as AssignmentSnapshot;
+    } catch {
+      throw new HousehelpAccessError(409, "The pinned assignment snapshot is invalid.");
+    }
+    const ingredients = snapshot?.recipe?.ingredients;
+    const steps = snapshot?.recipe?.steps;
+    if (
+      row.recipe_version_id !== assignment.recipe_version_id ||
+      snapshot?.assignment?.id !== assignment.id ||
+      snapshot?.assignment?.assigneeId !== assignment.assignee_id ||
+      snapshot?.assignment?.recipeVersionId !== assignment.recipe_version_id ||
+      snapshot?.recipe?.versionId !== assignment.recipe_version_id ||
+      !Array.isArray(ingredients) || ingredients.length === 0 ||
+      !Array.isArray(steps) || steps.length === 0 ||
+      !snapshot.translations?.[locale]
+    ) {
+      throw new HousehelpAccessError(409, "The pinned assignment snapshot does not match.");
+    }
+    const ingredientIds = ingredients.map((ingredient) => ingredient.id);
+    const stepIds = steps.map((step) => step.id);
+    if (
+      ingredientIds.some((id) => typeof id !== "string" || id.length === 0) ||
+      stepIds.some((id) => typeof id !== "string" || id.length === 0) ||
+      new Set(ingredientIds).size !== ingredientIds.length ||
+      new Set(stepIds).size !== stepIds.length
+    ) {
+      throw new HousehelpAccessError(409, "The pinned assignment snapshot contains invalid entity ids.");
+    }
+    return snapshot;
+  }
+
+  private validateMutationReferences(
+    snapshot: AssignmentSnapshot,
+    assignmentId: string,
+    mutation: Exclude<HousehelpMutation, { type: "locale" }>,
+  ): void {
+    switch (mutation.type) {
+      case "ingredient":
+        if (!snapshot.recipe.ingredients.some((ingredient) => ingredient.id === mutation.ingredientId)) {
+          throw new HousehelpAccessError(409, "The ingredient is not in the pinned assignment snapshot.");
+        }
+        if (mutation.ingredientIndex >= snapshot.recipe.ingredients.length) {
+          throw new HousehelpAccessError(409, "The ingredient index is outside the pinned assignment snapshot.");
+        }
+        return;
+      case "step":
+        if (!snapshot.recipe.steps.some((step) => step.id === mutation.stepId)) {
+          throw new HousehelpAccessError(409, "The step is not in the pinned assignment snapshot.");
+        }
+        if (mutation.stepIndex >= snapshot.recipe.steps.length) {
+          throw new HousehelpAccessError(409, "The step index is outside the pinned assignment snapshot.");
+        }
+        return;
+      case "timer": {
+        const timerStep = snapshot.recipe.steps.find((step) => step.id === mutation.stepId);
+        if (!timerStep) {
+          throw new HousehelpAccessError(409, "The timer step is not in the pinned assignment snapshot.");
+        }
+        if (!timerStep.timer || timerStep.timer.durationSeconds !== mutation.durationSeconds) {
+          throw new HousehelpAccessError(409, "The timer duration does not match the pinned assignment snapshot.");
+        }
+        if (mutation.timerId !== `timer-${timerStep.id}`) {
+          throw new HousehelpAccessError(409, "The timer id does not match the pinned assignment snapshot.");
+        }
+        return;
+      }
+      case "issue": {
+        const ingredientEntity = snapshot.recipe.ingredients.some(
+          (ingredient) => ingredient.id === mutation.entityId,
+        );
+        const validEntity =
+          mutation.entityId === assignmentId ||
+          ingredientEntity ||
+          snapshot.recipe.steps.some((step) => step.id === mutation.entityId);
+        if (!validEntity) {
+          throw new HousehelpAccessError(409, "The issue entity is not in the pinned assignment snapshot.");
+        }
+        if (mutation.issueType === "ingredient_missing" && !ingredientEntity) {
+          throw new HousehelpAccessError(409, "The missing ingredient is not in the pinned assignment snapshot.");
+        }
+        return;
+      }
+      default:
+        return;
+    }
   }
 
   private updateSession(

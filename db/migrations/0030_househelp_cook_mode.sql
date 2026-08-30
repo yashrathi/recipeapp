@@ -40,13 +40,14 @@ CREATE TABLE househelp_step_progress (
 );
 
 CREATE TABLE househelp_timers (
-  id TEXT PRIMARY KEY,
+  id TEXT NOT NULL,
   session_id TEXT NOT NULL REFERENCES househelp_cooking_sessions(id),
   step_id TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('pending', 'running', 'elapsed', 'dismissed')),
   duration_seconds INTEGER NOT NULL,
   ends_at TEXT,
-  updated_at TEXT NOT NULL
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (session_id, id)
 );
 
 CREATE TABLE househelp_issues (
@@ -56,17 +57,19 @@ CREATE TABLE househelp_issues (
   reporter_id TEXT NOT NULL REFERENCES users(id),
   issue_type TEXT NOT NULL,
   entity_id TEXT,
-  idempotency_key TEXT NOT NULL UNIQUE,
+  idempotency_key TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'open',
-  created_at TEXT NOT NULL
+  created_at TEXT NOT NULL,
+  UNIQUE (assignment_id, idempotency_key)
 );
 
 CREATE TABLE househelp_idempotency_keys (
-  idempotency_key TEXT PRIMARY KEY,
+  idempotency_key TEXT NOT NULL,
   assignment_id TEXT NOT NULL REFERENCES cooking_assignments(id),
   session_id TEXT REFERENCES househelp_cooking_sessions(id),
   accepted_revision INTEGER NOT NULL,
-  created_at TEXT NOT NULL
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (assignment_id, idempotency_key)
 );
 
 CREATE INDEX househelp_snapshots_assignment_idx
