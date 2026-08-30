@@ -1,5 +1,7 @@
 import type Database from "better-sqlite3";
 
+import { seedHousehelpDemoData } from "@/features/househelp/server/demo-seed";
+
 export const DEMO_IDS = {
   household: "demo-household",
   homeowner: "demo-homeowner",
@@ -453,5 +455,11 @@ export function seedDemoData(client: Database.Database): void {
       SEEDED_AT,
       null,
     );
+
+    seedHousehelpDemoData(client, {
+      assignment: DEMO_IDS.assignment,
+      househelp: DEMO_IDS.househelp,
+      recipeVersion: DEMO_IDS.recipeVersion,
+    });
   })();
 }

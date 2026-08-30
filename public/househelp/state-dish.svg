@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 220" role="img" aria-label="Prepared dish">
+  <path d="M52 105h176c-3 55-35 88-88 88s-85-33-88-88z" fill="#fffdf7" stroke="#176b45" stroke-width="8"/>
+  <path d="M68 105c14-38 43-57 72-57s58 19 72 57" fill="#dfeeda" stroke="#176b45" stroke-width="8"/>
+  <path d="M100 80c8-18 15-26 25-35M145 78c5-21 13-31 25-43M181 84c2-14 8-23 18-31" fill="none" stroke="#d96b2b" stroke-linecap="round" stroke-width="8"/>
+  <circle cx="106" cy="106" r="12" fill="#d96b2b"/><circle cx="143" cy="92" r="13" fill="#f1b24b"/><circle cx="174" cy="111" r="12" fill="#176b45"/>
+</svg>

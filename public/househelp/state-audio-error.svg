@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-label="Sound error">
+  <circle cx="110" cy="110" r="92" fill="#fff1ec" stroke="#9b3a24" stroke-width="8"/>
+  <path d="M52 92h28l31-26v88l-31-26H52z" fill="#9b3a24"/>
+  <path d="M148 88l34 44M182 88l-34 44" stroke="#9b3a24" stroke-linecap="round" stroke-width="12"/>
+</svg>

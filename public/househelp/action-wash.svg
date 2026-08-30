@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 220" role="img" aria-label="Wash">
+  <path d="M47 128h166c-2 43-30 67-83 67s-81-24-83-67z" fill="#fffdf7" stroke="#176b45" stroke-width="8"/>
+  <path d="M73 126c11-25 29-37 57-37s47 12 57 37" fill="#a8cf9d" stroke="#176b45" stroke-width="7"/>
+  <path d="M72 35c0 0-13 19-13 30a13 13 0 0 0 26 0c0-11-13-30-13-30zM119 24c0 0-13 19-13 30a13 13 0 0 0 26 0c0-11-13-30-13-30zM166 35c0 0-13 19-13 30a13 13 0 0 0 26 0c0-11-13-30-13-30z" fill="#5ca7bd"/>
+</svg>

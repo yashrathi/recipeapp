@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 220" role="img" aria-label="Stir">
+  <path d="M39 122h182c-3 49-34 74-91 74s-88-25-91-74z" fill="#fffdf7" stroke="#176b45" stroke-width="8"/>
+  <path d="M63 122c17-33 40-48 67-48s50 15 67 48" fill="#dfeeda" stroke="#176b45" stroke-width="7"/>
+  <path d="M170 27l-47 111" stroke="#d96b2b" stroke-linecap="round" stroke-width="13"/>
+  <path d="M87 98c22-15 62-14 83 2M80 113c26 14 68 14 94-1" fill="none" stroke="#176b45" stroke-linecap="round" stroke-width="7"/>
+</svg>
