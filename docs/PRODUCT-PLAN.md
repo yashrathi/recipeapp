@@ -107,7 +107,7 @@ Failure path: show `Transcript unavailable` and offer retry/manual entry instead
 
 ### E. Prepare and cook
 
-1. At first setup, one full-screen speaker control invites the initial tap needed to start audio. The app then speaks the language-selection prompt; each language option says its own name aloud, and the chosen language is immediately confirmed and remembered.
+1. At first setup, one full-screen speaker control invites the initial tap needed to start audio. The app then speaks the language-selection prompt; each language option says its own name aloud, and the chosen language is immediately confirmed and remembered on that device. Later menu visits, task openings, reloads, and completion returns reuse it; language setup appears again only when the househelp explicitly chooses `Change language`.
 2. Househelp opens the cooking menu. The app announces one item at a time. Assignments include date, meal, target time, and `Start`/`Resume`; published household recipes are identified as such and offer `Cook now`. `Next` cycles through both.
 3. If househelp was asked in person to make an unassigned dish, `Cook now` creates one homeowner-visible ad-hoc cooking run and atomically pins the current reviewed bilingual recipe version before opening it.
 4. Opening the task speaks a short briefing: dish, servings, target time, and homeowner note when present.

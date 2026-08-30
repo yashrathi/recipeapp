@@ -74,7 +74,7 @@ npm run test:e2e
 
 The E2E runner initializes deterministic data in a dedicated per-run `.data/playwright-<pid>.sqlite` database and starts its own development server on port `3100` by default. It never reuses the normal port-3000 server or database. Stop any active `next dev` process before starting the browser suite because Next.js permits only one development process per build directory. It intentionally uses one worker because the desktop and mobile projects share the isolated fixture. Set `PORT` or `PLAYWRIGHT_DATABASE_PATH` only when a controlled test environment requires an override. Four desktop cases are skipped because their cook-mode acceptance is deliberately phone-only. HTML reports are written to the ignored `playwright-report/` directory.
 
-Current verified baseline: 18 test files / 187 Vitest tests, a warning-free production build, and 10 passing Playwright cases across desktop/mobile with 2 intentional desktop skips.
+Current verified baseline on `fix/househelp-main-menu-flow`: 18 test files / 194 Vitest tests, a warning-free production build, and 14 passing Playwright cases across desktop/mobile with 4 intentional desktop skips.
 
 ## Runtime checks
 
@@ -96,7 +96,7 @@ Verified `main` is pushed to the private GitHub repository, but no deployment ta
 - Confirm every screen ID referenced in a workflow exists in `docs/PRODUCT-PLAN.md`.
 - Confirm wireframes cover the core homeowner import/review/assign/shop loop and househelp prepare/cook loop.
 - Confirm provider-dependent behavior is labeled as discovery or fallback rather than guaranteed.
-- Confirm the househelp flow includes first-tap audio activation, active assignments plus current published household recipes, an assignment-free `Cook now` path, spoken labels/results, automatic next-step speech, replay, language change, offline readiness, a recoverable audio-failure path, local-only previous-step review, and a `Cooking menu` escape that works while completion speech is stalled.
+- Confirm the househelp flow includes one-time device language setup, remembered locale across menu/task/reload/completion navigation, active assignments plus current published household recipes, an assignment-free `Cook now` path, spoken labels/results, automatic next-step speech, replay, explicit language change, offline readiness, a recoverable audio-failure path, local-only previous-step review, and a `Cooking menu` escape that works while completion speech is stalled.
 - Confirm every househelp visual is purposeful, verified, accessible, rights-aware, and safely replaceable by spoken guidance if unavailable.
 - Confirm current facts live in `STATE`, completed work in `HISTORY`, decisions in `DECISIONS`, and durable gotchas in `MEMORY`.
 

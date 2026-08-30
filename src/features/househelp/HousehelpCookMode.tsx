@@ -16,6 +16,7 @@ import {
   type HousehelpEvent,
   type HousehelpPersistenceEffect,
 } from "./machine";
+import { readHousehelpPreferences, rememberHousehelpLocale } from "./preferences";
 import { resolveReadiness } from "./readiness";
 import { BrowserSpeechAdapter, SerializedSpeechQueue } from "./speech";
 import type {
@@ -177,12 +178,28 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
 
   useEffect(() => {
     const local = readLocalEnvelope(initialData);
-    if (!local) return;
-    pendingRef.current = local.pending;
-    if (local.state.lastPersistedRevision >= stateRef.current.lastPersistedRevision) {
-      setState({
+    const preferences = readHousehelpPreferences();
+    if (local) pendingRef.current = local.pending;
+    const restored = local && local.state.lastPersistedRevision >= stateRef.current.lastPersistedRevision
+      ? {
         ...local.state,
         furthestStepIndex: local.state.furthestStepIndex ?? local.state.stepIndex,
+      }
+      : stateRef.current;
+    if (preferences) {
+      const next = {
+        ...restored,
+        locale: preferences.locale,
+        view: "today" as const,
+        audioGate: "unlocked" as const,
+        readiness: "ready_device_tts" as const,
+        speechStatus: "idle" as const,
+        currentPrompt: null,
+      };
+      setState(next);
+    } else if (local) {
+      setState({
+        ...restored,
         view: "audio_gate",
         audioGate: "locked",
         speechStatus: "idle",
@@ -362,6 +379,7 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
       taskExists: true,
     });
     if (!transition.accepted) return;
+    if (event.type === "SELECT_LANGUAGE") rememberHousehelpLocale(event.locale);
 
     let next = transition.state;
     saveLocalEnvelope(snapshot, next, pendingRef.current);

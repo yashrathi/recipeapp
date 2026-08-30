@@ -93,6 +93,7 @@ Househelp screens use one focal visual at a time. Audio remains authoritative; t
 - Store canonical recipe content separately from translations.
 - Spoken guidance and interface phrases are versioned by language. A reviewed source version remains the authority.
 - Language is chosen during setup with spoken samples and can be changed from every househelp screen without entering settings.
+- Remember the confirmed device language across the cooking menu, assigned tasks, recipe-picked tasks, reloads, and completion return. Never insert language setup between menu selection and cooking.
 - The homeowner may preselect a language on the invite, but the househelp confirms it by hearing a sample.
 - Launch languages require user validation; the architecture must support English, Hindi, and household-selected Indian languages without hard-coded strings.
 - Audio guidance is required in the first usable slice, not deferred enhancement work.

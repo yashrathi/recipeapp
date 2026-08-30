@@ -4,7 +4,7 @@ Updated: 2026-08-30
 
 ## Current milestone
 
-Milestone 2 is integrated and verified locally on `main`: reviewed recipe import now supports wider public webpages through a Firecrawl fallback and public YouTube videos through available transcript evidence plus OpenAI structured extraction. Milestone 1 remains integrated and verified.
+Milestone 2 is integrated and verified locally on `main`. The requested househelp cooking-menu and one-time-language repair is implemented and fully verified on `fix/househelp-main-menu-flow`, awaiting explicit merge authorization.
 
 ## Integrated task branches and worktrees
 
@@ -17,15 +17,16 @@ Milestone 2 is integrated and verified locally on `main`: reviewed recipe import
 
 - Active househelp-flow repair: branch `fix/househelp-main-menu-flow`, at `/Users/yashmac16/Documents/ChatGPT/Recipe App-househelp-flow-fix`.
 
-All accepted Milestone 1 and Milestone 2 worker commits are cherry-picked to `main`. The househelp-flow repair remains isolated and unmerged pending verification and explicit merge authorization.
+All accepted Milestone 1 and Milestone 2 worker commits are cherry-picked to `main`. The verified househelp-flow repair remains isolated and unmerged pending explicit merge authorization.
 
 ## Working behavior
 
 - The Node 24/Next.js 16 foundation, frozen contracts, six deterministic SQLite migrations, signed development-only role sessions, server-side household policy, seed, and test harness are committed on the repair branch.
 - A homeowner can import a supported public recipe webpage or public YouTube watch/share/Shorts link, or use manual entry; inspect provider/source evidence and warnings; edit the draft; review exact English/Hindi dish, ingredient, and step speech; publish; and assign a pinned recipe snapshot with optional bilingual notes.
 - On `fix/househelp-main-menu-flow`, a househelp hears and browses active assignments and current published household recipes one at a time. They can choose or resume an assigned task, or use `Cook now` after an in-person request to create a bilingual pinned ad-hoc cooking run without homeowner assignment. They can review prior cooking steps without rewinding saved progress and explicitly return to the menu from an active or completed run. `Done` also returns automatically through a bounded fallback when confirmation speech stalls.
+- Spoken-language confirmation occurs once per device. The selected locale is reused when entering a task, resuming after reload, and returning after completion; language selection reappears only through the explicit change control.
 - Visuals are deliberately light: bundled focal state/action illustrations have accessible equivalents, while spoken guidance remains authoritative.
-- The integrated baseline remains 18 files / 187 tests plus 10 Playwright cases. The repair branch is undergoing regression verification.
+- On the repair branch, lint, strict TypeScript, 18 files / 194 tests, and the production build pass. Playwright passes 14 desktop/mobile cases with 4 intentional desktop skips, including the one-time language handoff, menu browsing, assignment-free cooking, homeowner denial, active-task escape, stalled completion speech, and offline progress behavior.
 - The exact Pinch-of-Yum page succeeds through both repaired direct fetch and forced Firecrawl fallback with deterministic extraction (12 ingredients, 7 steps). A live captioned YouTube recipe succeeds through Firecrawl transcript retrieval and OpenAI evidence extraction as `partial_success` (3 evidenced ingredients, 12 steps, language recorded, no timestamps fabricated). Credentials and raw source/transcript text were not printed or persisted by the smoke harness.
 - Verified `main` is pushed to the private GitHub repository `https://github.com/yashrathi/recipeapp.git`; GitHub default branch is `main`.
 
@@ -49,4 +50,4 @@ All accepted Milestone 1 and Milestone 2 worker commits are cherry-picked to `ma
 
 ## Immediate next step
 
-Select a compatible public hosting target, persistent datastore, and production identity approach before deploying. No Vercel/Render/Railway/Fly/Cloudflare link or deployment configuration exists in the repository. Real-device househelp sessions remain required before production launch.
+Review the verified `fix/househelp-main-menu-flow` output and authorize or decline merge. After integration, select a compatible public hosting target, persistent datastore, and production identity approach; real-device househelp sessions remain required before production launch.

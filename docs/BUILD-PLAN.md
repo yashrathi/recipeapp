@@ -24,6 +24,7 @@ Acceptance achieved locally:
 - Extracted title, servings, ingredients, and ordered steps appear as a draft with source attribution and warnings.
 - Homeowner can correct, publish, and assign the recipe to a meal slot.
 - Househelp can choose a spoken language by listening, browse active assignments and published household recipes one at a time, choose/resume an assignment or start an ad-hoc cooking run after an in-person request, check ingredients one at a time, complete spoken steps, and mark it done without needing to read.
+- The confirmed spoken language is reused across menu choices, task routes, reload/resume, and completion return; only the explicit language control reopens selection.
 - After `Done`, the completed assignment disappears from the cooking menu and the next assigned dish or no-task state is shown.
 - Every househelp control announces itself when activated; `Next` advances and automatically speaks the full new instruction.
 - First-time setup works in environments that require an initial user gesture before audio begins.

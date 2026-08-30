@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "@/app/househelp/househelp.module.css";
 
 import { formatMessage, label, localeBundles } from "./locales";
+import { readHousehelpPreferences, rememberHousehelpLocale } from "./preferences";
 import { BrowserSpeechAdapter, SerializedSpeechQueue } from "./speech";
 import type {
   HousehelpAssignmentSummary,
@@ -79,8 +80,14 @@ export function HousehelpTaskMenu({
 
   useEffect(() => {
     const visibleTasks = initialTasks.filter(({ id }) => !locallyCompleted(id));
+    const preferences = readHousehelpPreferences();
     setTasks(visibleTasks);
-    if (!visibleTasks.length && !initialRecipes.length) setView("empty");
+    if (preferences) {
+      setLocale(preferences.locale);
+      setView(visibleTasks.length || initialRecipes.length ? "menu" : "empty");
+    } else if (!visibleTasks.length && !initialRecipes.length) {
+      setView("empty");
+    }
   }, [initialRecipes.length, initialTasks]);
 
   useEffect(() => {
@@ -153,6 +160,7 @@ export function HousehelpTaskMenu({
   }
 
   async function continueToMenu() {
+    rememberHousehelpLocale(locale);
     setView("menu");
     if (item) await play([
       { locale, text: formatMessage(locale, "control.continue") },
@@ -218,7 +226,14 @@ export function HousehelpTaskMenu({
         dish: task.translations[locale].dish,
       }) },
     ]);
-    if (outcome === "completed") router.push(`/househelp/${encodeURIComponent(task.id)}`);
+    if (outcome === "completed") {
+      void fetch(`/api/househelp/assignments/${encodeURIComponent(task.id)}/progress`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ type: "locale", locale }),
+      }).catch(() => undefined);
+      router.push(`/househelp/${encodeURIComponent(task.id)}`);
+    }
   }
 
   function stopSpeech() {

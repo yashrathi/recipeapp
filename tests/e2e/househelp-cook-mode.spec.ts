@@ -50,12 +50,6 @@ async function completeCookFlow({ page, isMobile }: { page: Page; isMobile: bool
   await page.getByRole("button", { name: "Enter househelp shell" }).click();
   await page.goto("/househelp");
   await openFirstTaskFromMenu(page);
-  await expect(page.locator("main")).toHaveAttribute("data-view", "audio_gate");
-
-  await page.getByRole("button", { name: "Turn on sound" }).click();
-  await expect(page.getByRole("dialog", { name: /Choose your language/ })).toBeVisible();
-  await page.getByRole("button", { name: "हिन्दी", exact: true }).click();
-  await page.getByRole("button", { name: "आगे बढ़ें" }).click();
   await expect(page.locator("main")).toHaveAttribute("data-view", "today");
 
   await page.getByRole("button", { name: "शुरू करें" }).click();
@@ -84,10 +78,7 @@ async function completeCookFlow({ page, isMobile }: { page: Page; isMobile: bool
   await expect(page.getByRole("heading", { name: "अब एक कप पालक डालें।" })).toBeVisible();
 
   await page.reload();
-  await expect(page.locator("main")).toHaveAttribute("data-view", "audio_gate");
-  await page.getByRole("button", { name: "आवाज़ चालू करें" }).click();
-  await page.getByRole("button", { name: "हिन्दी", exact: true }).click();
-  await page.getByRole("button", { name: "आगे बढ़ें" }).click();
+  await expect(page.locator("main")).toHaveAttribute("data-view", "today");
   await page.getByRole("button", { name: "फिर से शुरू करें" }).click();
   await expect(page.getByRole("heading", { name: "अब एक कप पालक डालें।" })).toBeVisible();
 
@@ -114,8 +105,8 @@ async function completeCookFlow({ page, isMobile }: { page: Page; isMobile: bool
   await expect(page.getByText("पूरा हुआ। घर के मालिक को बता दिया गया है।")).toBeVisible();
   await expect(page.getByRole("button", { name: "खाना बनाने की सूची" })).toBeEnabled();
   await expect(page).toHaveURL(/\/househelp$/, { timeout: 10_000 });
-  await expect(page.getByRole("heading", { name: "Cooking menu" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Turn on sound|आवाज़ चालू करें/ })).toBeEnabled();
+  await expect(page.locator("main")).toHaveAttribute("data-view", "menu");
+  await expect(page.getByRole("dialog", { name: /अपनी भाषा चुनें|Choose your language/ })).toHaveCount(0);
 
   const menuResponse = await page.request.get("/api/househelp/assignments");
   expect(menuResponse.ok()).toBeTruthy();
@@ -177,9 +168,7 @@ test("409 and stalled progress responses cannot leave ingredient controls locked
   await page.getByRole("button", { name: "Enter househelp shell" }).click();
   await page.goto("/househelp");
   await openFirstTaskFromMenu(page);
-  await page.getByRole("button", { name: "Turn on sound" }).click();
-  await page.getByRole("button", { name: "हिन्दी", exact: true }).click();
-  await page.getByRole("button", { name: "आगे बढ़ें" }).click();
+  await expect(page.locator("main")).toHaveAttribute("data-view", "today");
   await page.getByRole("button", { name: "शुरू करें" }).click();
   await page.getByRole("button", { name: "सामग्री जाँचें" }).click();
 
@@ -230,9 +219,7 @@ test("cooking menu remains an explicit escape from an active task", async ({ pag
   await page.getByRole("button", { name: "Enter househelp shell" }).click();
   await page.goto("/househelp");
   await openFirstTaskFromMenu(page);
-  await page.getByRole("button", { name: "Turn on sound" }).click();
-  await page.getByRole("button", { name: "हिन्दी", exact: true }).click();
-  await page.getByRole("button", { name: "आगे बढ़ें" }).click();
+  await expect(page.locator("main")).toHaveAttribute("data-view", "today");
 
   const menuButton = page.getByRole("button", { name: "खाना बनाने की सूची" });
   await expect(menuButton).toBeEnabled();
@@ -283,10 +270,7 @@ test("househelp can start a published household recipe without an assignment", a
     .toContain("demo-recipe-v1");
   await page.getByRole("button", { name: "अभी बनाएँ" }).click();
   await expect(page).toHaveURL(/\/househelp\/(?!demo-assignment)[^/]+$/);
-  await expect(page.locator("main")).toHaveAttribute("data-view", "audio_gate");
-  await page.getByRole("button", { name: "आवाज़ चालू करें" }).click();
-  await page.getByRole("button", { name: "हिन्दी", exact: true }).click();
-  await page.getByRole("button", { name: "आगे बढ़ें" }).click();
+  await expect(page.locator("main")).toHaveAttribute("data-view", "today");
   await page.getByRole("button", { name: "शुरू करें" }).click();
   await page.getByRole("button", { name: "सामग्री जाँचें" }).click();
   await expect(page.getByRole("heading", { name: "आधा कप धुला हुआ पालक" })).toBeVisible();
