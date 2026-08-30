@@ -1,0 +1,60 @@
+{
+  "match": {
+    "contractVersion": "web-recipe-import/v1",
+    "status": "success",
+    "reviewState": "needs_review",
+    "source": {
+      "method": "json_ld",
+      "canonicalUrl": "https://recipes.example.test/basic",
+      "author": {"displayText": "Fixture Kitchen", "confidence": 0.95}
+    },
+    "recipe": {
+      "title": {"displayText": "Green Pan Supper", "confidence": 0.95},
+      "yield": {"displayText": "2 servings", "confidence": 0.95},
+      "servings": 2,
+      "prepTime": {"sourceText": "PT10M", "seconds": 600, "confidence": 0.95},
+      "cookTime": {"sourceText": "PT8M", "seconds": 480, "confidence": 0.95},
+      "totalTime": {"sourceText": "PT18M", "seconds": 1080, "confidence": 0.95},
+      "ingredients": [
+        {
+          "order": 1,
+          "originalText": "1 cup spinach",
+          "displayText": "1 cup spinach",
+          "quantity": {"kind": "exact", "decimal": "1", "sourceText": "1"},
+          "unit": {"canonical": "cup", "sourceText": "cup"},
+          "ingredientText": "spinach",
+          "preparationNote": null,
+          "confidence": 0.95,
+          "evidenceLocator": "script[0]#/recipeIngredient/0"
+        },
+        {
+          "order": 2,
+          "originalText": "200 g paneer, cubed",
+          "displayText": "200 g paneer, cubed",
+          "quantity": {"kind": "exact", "decimal": "200", "sourceText": "200"},
+          "unit": {"canonical": "gram", "sourceText": "g"},
+          "ingredientText": "paneer",
+          "preparationNote": "cubed",
+          "confidence": 0.95,
+          "evidenceLocator": "script[0]#/recipeIngredient/1"
+        },
+        {
+          "order": 3,
+          "originalText": "1/2 tsp salt",
+          "displayText": "1/2 tsp salt",
+          "quantity": {"kind": "exact", "numerator": 1, "denominator": 2, "sourceText": "1/2"},
+          "unit": {"canonical": "teaspoon", "sourceText": "tsp"},
+          "ingredientText": "salt",
+          "preparationNote": null,
+          "confidence": 0.95,
+          "evidenceLocator": "script[0]#/recipeIngredient/2"
+        }
+      ],
+      "steps": [
+        {"order": 1, "section": null, "displayText": "Warm the pan.", "confidence": 0.95, "evidenceLocator": "script[0]#/recipeInstructions/0/text"},
+        {"order": 2, "section": null, "displayText": "Add spinach and paneer.", "confidence": 0.95, "evidenceLocator": "script[0]#/recipeInstructions/1/text"}
+      ]
+    },
+    "warningCodes": []
+  }
+}

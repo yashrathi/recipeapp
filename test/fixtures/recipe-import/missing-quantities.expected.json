@@ -1,0 +1,44 @@
+{
+  "match": {
+    "contractVersion": "web-recipe-import/v1",
+    "status": "success",
+    "reviewState": "needs_review",
+    "source": {"method": "json_ld"},
+    "recipe": {
+      "title": {"displayText": "Simple Leaf Bowl", "confidence": 0.95},
+      "ingredients": [
+        {
+          "order": 1,
+          "originalText": "spinach, washed",
+          "quantity": null,
+          "unit": null,
+          "ingredientText": "spinach",
+          "preparationNote": "washed",
+          "evidenceLocator": "script[0]#/recipeIngredient/0"
+        },
+        {
+          "order": 2,
+          "originalText": "salt to taste",
+          "quantity": null,
+          "unit": null,
+          "ingredientText": "salt to taste",
+          "preparationNote": null,
+          "evidenceLocator": "script[0]#/recipeIngredient/1"
+        },
+        {
+          "order": 3,
+          "quantity": {"kind": "exact", "decimal": "1", "sourceText": "1"},
+          "unit": {"canonical": "bunch", "sourceText": "bunch"},
+          "ingredientText": "coriander",
+          "preparationNote": "chopped",
+          "evidenceLocator": "script[0]#/recipeIngredient/2"
+        }
+      ],
+      "steps": [
+        {"order": 1, "displayText": "Put everything in a bowl.", "evidenceLocator": "script[0]#/recipeInstructions#line/0"},
+        {"order": 2, "displayText": "Mix gently.", "evidenceLocator": "script[0]#/recipeInstructions#line/1"}
+      ]
+    },
+    "warningCodes": ["QUANTITY_MISSING", "QUANTITY_MISSING"]
+  }
+}

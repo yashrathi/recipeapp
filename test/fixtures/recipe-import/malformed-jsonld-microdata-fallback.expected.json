@@ -1,0 +1,25 @@
+{
+  "match": {
+    "contractVersion": "web-recipe-import/v1",
+    "status": "success",
+    "reviewState": "needs_review",
+    "source": {
+      "method": "microdata",
+      "author": {"displayText": "Fixture Cook", "confidence": 0.75}
+    },
+    "recipe": {
+      "title": {"displayText": "Fallback Tomato Pan", "confidence": 0.75},
+      "yield": {"displayText": "Makes 3", "confidence": 0.75},
+      "servings": 3,
+      "ingredients": [
+        {"order": 1, "displayText": "3 pieces tomato, sliced", "ingredientText": "tomato", "preparationNote": "sliced", "evidenceLocator": "recipeScope[0]/recipeIngredient[0]"},
+        {"order": 2, "displayText": "1 tbsp oil", "ingredientText": "oil", "preparationNote": null, "evidenceLocator": "recipeScope[0]/recipeIngredient[1]"}
+      ],
+      "steps": [
+        {"order": 1, "displayText": "Heat the oil.", "evidenceLocator": "recipeScope[0]/recipeInstructions[0]"},
+        {"order": 2, "displayText": "Add the tomato.", "evidenceLocator": "recipeScope[0]/recipeInstructions[1]"}
+      ]
+    },
+    "warningCodes": ["JSON_LD_MALFORMED"]
+  }
+}

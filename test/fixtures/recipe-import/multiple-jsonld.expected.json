@@ -1,0 +1,26 @@
+{
+  "match": {
+    "contractVersion": "web-recipe-import/v1",
+    "status": "success",
+    "reviewState": "needs_review",
+    "source": {
+      "method": "json_ld",
+      "canonicalUrl": "https://recipes.example.test/multiple",
+      "publisher": {"displayText": "Fixture Press", "confidence": 0.95}
+    },
+    "recipe": {
+      "title": {"displayText": "Layered Lentil Pot", "confidence": 0.95},
+      "yield": {"displayText": "Serves 4", "confidence": 0.95},
+      "servings": 4,
+      "ingredients": [
+        {"order": 1, "displayText": "2 cups lentils", "ingredientText": "lentils", "evidenceLocator": "script[1]#/@graph/1/recipeIngredient/0"},
+        {"order": 2, "displayText": "4 cups water", "ingredientText": "water", "evidenceLocator": "script[1]#/@graph/1/recipeIngredient/1"}
+      ],
+      "steps": [
+        {"order": 1, "section": "Cook", "displayText": "Combine lentils and water.", "evidenceLocator": "script[1]#/@graph/1/recipeInstructions/0/itemListElement/0/text"},
+        {"order": 2, "section": "Cook", "displayText": "Simmer until tender.", "evidenceLocator": "script[1]#/@graph/1/recipeInstructions/0/itemListElement/1/text"}
+      ]
+    },
+    "warningCodes": ["MULTIPLE_RECIPE_CANDIDATES"]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "contractVersion": "web-recipe-import/v1",
+  "license": "Project-authored synthetic test data; unrestricted use within this repository",
+  "networkAllowed": false,
+  "parserCases": [
+    {
+      "id": "success-basic",
+      "sourceUrl": "https://recipes.example.test/basic",
+      "input": "success-basic.html",
+      "expected": "success-basic.expected.json"
+    },
+    {
+      "id": "multiple-jsonld",
+      "sourceUrl": "https://recipes.example.test/multiple",
+      "input": "multiple-jsonld.html",
+      "expected": "multiple-jsonld.expected.json"
+    },
+    {
+      "id": "missing-quantities",
+      "sourceUrl": "https://recipes.example.test/missing-quantities",
+      "input": "missing-quantities.html",
+      "expected": "missing-quantities.expected.json"
+    },
+    {
+      "id": "malformed-jsonld-microdata-fallback",
+      "sourceUrl": "https://recipes.example.test/fallback",
+      "input": "malformed-jsonld-microdata-fallback.html",
+      "expected": "malformed-jsonld-microdata-fallback.expected.json"
+    },
+    {
+      "id": "partial-missing-steps",
+      "sourceUrl": "https://recipes.example.test/partial",
+      "input": "partial-missing-steps.html",
+      "expected": "partial-missing-steps.expected.json"
+    },
+    {
+      "id": "unsupported-page",
+      "sourceUrl": "https://recipes.example.test/article",
+      "input": "unsupported-page.html",
+      "expected": "unsupported-page.expected.json"
+    }
+  ],
+  "urlPolicyCases": "url-policy-cases.json"
+}

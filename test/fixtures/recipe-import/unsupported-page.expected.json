@@ -1,0 +1,15 @@
+{
+  "match": {
+    "contractVersion": "web-recipe-import/v1",
+    "status": "failure",
+    "reviewState": "not_created",
+    "recipe": null,
+    "warnings": [],
+    "failure": {
+      "code": "UNSUPPORTED_RECIPE_PAGE",
+      "stage": "extract",
+      "retryable": false,
+      "message": "This page does not contain supported structured recipe data."
+    }
+  }
+}

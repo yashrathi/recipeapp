@@ -1,0 +1,17 @@
+{
+  "match": {
+    "contractVersion": "web-recipe-import/v1",
+    "status": "partial_success",
+    "reviewState": "needs_review",
+    "source": {"method": "json_ld"},
+    "recipe": {
+      "title": {"displayText": "Unfinished Test Dish", "confidence": 0.95},
+      "ingredients": [
+        {"order": 1, "displayText": "1 cup peas", "ingredientText": "peas", "evidenceLocator": "script[0]#/recipeIngredient/0"}
+      ],
+      "steps": []
+    },
+    "confidence": 0,
+    "warningCodes": ["CORE_FIELD_MISSING"]
+  }
+}
