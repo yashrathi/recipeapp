@@ -4,41 +4,40 @@ Updated: 2026-08-30
 
 ## Current milestone
 
-Milestone 1 implementation is active: public webpage recipe import through homeowner review and assignment to audio-first, visually assisted househelp cook mode.
+Milestone 1 is integrated and verified locally on `main`: public webpage recipe import through homeowner review and immutable bilingual assignment to an audio-first, visually assisted househelp cook mode.
 
-## Active branches and worktrees
+## Integrated task branches and worktrees
 
 - Coordinator base: `main` at `/Users/yashmac16/Documents/ChatGPT/Recipe App`
 - Visible homeowner task `01a05153-f4d3-7091-87f6-bc55eb1a29b0`, branch `feature/homeowner-recipe-flow`, at `/Users/yashmac16/.codex/worktrees/d50a/Recipe App`
 - Visible import task `01a05153-f172-7252-8c79-bea624f25d53`, branch `feature/web-recipe-import`, at `/Users/yashmac16/.codex/worktrees/1283/Recipe App`
 - Visible househelp task `01a05153-f6f9-71c0-9997-699f2235d8ac`, branch `feature/househelp-cook-mode`, at `/Users/yashmac16/.codex/worktrees/85f5/Recipe App`
-- Visible acceptance-review task `01a05154-027f-7cc2-a232-a7dedd36ac8c` at `/Users/yashmac16/.codex/worktrees/840f/Recipe App` (reserved)
+- Visible acceptance-review task `01a05154-027f-7cc2-a232-a7dedd36ac8c`, branch `review/milestone-1-acceptance`, at `/Users/yashmac16/.codex/worktrees/840f/Recipe App`
+
+All accepted worker commits are cherry-picked to `main`. The worktrees are retained only for review history; there is no active implementation worker.
 
 ## Working behavior
 
-- The accepted Node 24/Next.js 16 foundation, frozen contracts, SQLite/Drizzle local persistence, signed demo sessions, role policy, deterministic seed, and test harness are committed.
-- Product brief, UX direction, data/workflow plan, wireframes, and proposed build slices exist as documents. The househelp flow is specified as audio-first, multilingual, and visually assisted with one verified focal visual per screen; core tasks do not depend on reading or imagery alone.
+- The Node 24/Next.js 16 foundation, frozen contracts, five deterministic SQLite migrations, signed development-only role sessions, server-side household policy, seed, and test harness are committed.
+- A homeowner can import a supported public recipe webpage or use manual entry, inspect source evidence/warnings, edit the draft, review exact English/Hindi dish, ingredient, and step speech, publish, and assign a pinned recipe snapshot with optional bilingual notes.
+- A househelp sees only their next assigned task and can use English/Hindi audio setup, one-at-a-time ingredient checks, automatically spoken steps, Repeat/Stop/Help/language controls, timers, resume, issue reporting, and completion on a narrow phone. Progress is persisted server-side and mirrored in a bounded local retry queue for intermittent connectivity.
+- Visuals are deliberately light: bundled focal state/action illustrations have accessible equivalents, while spoken guidance remains authoritative.
+- `npm run verify` passes lint, strict TypeScript, 134 unit/integration tests, and the production build. Playwright passes 10 desktop/mobile flows with 2 intentional desktop skips for phone-only cook-mode cases. Production smoke checks return `200` for landing/health and `404` for the demo-session endpoint.
 - Git remote `origin` points to `https://github.com/yashrathi/recipeapp.git`; the remote currently has no branches and nothing has been pushed.
-
-## Active worker tasks
-
-- Homeowner task: implement review/edit/publish/assign and manual fallback UI/API with server-enforced homeowner permissions.
-- Import task: implement `web-recipe-import/v1`, safe fetch, normalization, fixture coverage, and homeowner-only import API.
-- Househelp task: implement the English/Hindi speech reducer, assigned-only cook flow, progress/issues/timers, and verified visual fallbacks.
-- Acceptance task remains reserved until the three feature branches are integrated.
 
 ## Blockers
 
-- None for Milestone 1.
+- None for the local Milestone 1 release candidate.
 - Official Swiggy or alternative grocery-provider API/partnership capability remains unverified and out of scope.
 
 ## Risks
 
 - Extraction quality and source/platform permissions.
-- Launch languages, dialect/pronunciation, kitchen audibility, device ownership, first-tap audio behavior, and offline speech behavior are not user-validated.
-- The source, licensing, review process, and coverage of ingredient/action visual assets are not yet validated.
+- English/Hindi wording and pronunciation, kitchen audibility, first-tap audio, TalkBack/VoiceOver behavior, vibration/alarms, and offline/background behavior still need real Android/iOS validation and low-literacy user sessions.
+- Webpage parsing is deliberately bounded and deterministic; wider public-site coverage and source terms still require discovery.
+- Bundled illustrations have safe fallbacks, but any future external recipe imagery needs explicit rights and content review.
 - Grocery catalog matching and checkout scope depend on provider access.
 
 ## Immediate next step
 
-Monitor and review the three visible feature tasks, integrate only verified commits, then release the independent acceptance reviewer against the combined milestone.
+Run assisted sessions with real househelp users on representative Android/iOS devices. Record language comprehension, tap errors, kitchen audibility, recovery from lost connectivity, and caregiver/homeowner setup friction before selecting production identity, datastore, and hosting.

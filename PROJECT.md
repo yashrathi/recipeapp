@@ -4,6 +4,10 @@
 
 A two-role web app that turns a public recipe webpage or YouTube cooking video into a clear, reviewable recipe. A homeowner can import, correct, schedule, assign, and shop for a recipe. A househelp can see assigned cooking work and follow ingredient and step-by-step instructions in a simple, mobile-friendly cooking mode.
 
+## Implementation status
+
+Milestone 1 is implemented and verified locally. It covers public webpage import plus manual fallback, homeowner review and bilingual publication, immutable assignment snapshots, and an English/Hindi audio-first househelp cook flow. YouTube import, shopping-list preparation, provider handoff, production identity, and production hosting remain later milestones.
+
 ## Users
 
 - **Homeowner:** chooses recipes, reviews extracted content, manages assignments, and approves shopping or ordering.
@@ -36,13 +40,13 @@ From a public recipe link, a homeowner can produce a trustworthy, assigned cooki
 
 ## Phase-one boundaries
 
-Included in the proposed first release:
+Included in the broader proposed first release roadmap:
 
-- Public recipe webpage and public YouTube URL import.
+- Public recipe webpage import; public YouTube URL import is the next proposed milestone.
 - Extraction into title, servings, time, ingredients, and steps.
 - Homeowner review/edit/publish.
-- Household membership, assignment, schedule, ingredient checklist, and cook mode.
-- Shopping-list preparation and a provider-neutral order handoff.
+- Seeded household membership, assignment, schedule, ingredient checklist, and cook mode are in Milestone 1.
+- Shopping-list preparation and a provider-neutral order handoff remain proposed later milestones.
 
 Not assumed for the first release:
 

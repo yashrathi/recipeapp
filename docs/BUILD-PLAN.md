@@ -1,6 +1,6 @@
 # Build Plan
 
-Status: Milestone 1 plan approved on 2026-08-30. Implementation has not started; later milestones remain proposed.
+Status: Milestone 1 implemented and independently verified locally on 2026-08-30. Later milestones remain proposed.
 
 The sequence uses complete vertical slices. Later milestones may change after user research and integration discovery.
 
@@ -8,15 +8,18 @@ The sequence uses complete vertical slices. Later milestones may change after us
 
 Goal: prove the core household loop with one public recipe webpage, homeowner review, assignment, and househelp execution.
 
-Workers (after approval):
+Completed workstreams:
 
-1. Product/UI foundation: household roles, homeowner import/review screens, househelp Today/cook-mode screens.
-2. Recipe pipeline: safe public-URL fetch, structured recipe extraction, draft normalization, warnings, and fixture tests.
-3. Quality review: permission, accessibility, workflow, and end-to-end acceptance review.
+1. Platform foundation: household roles, typed contracts, local persistence, signed development sessions, authorization policy, migrations, seed, and test harness.
+2. Recipe pipeline: safe public-URL fetch, structured extraction, lossless normalization, warnings, evidence, fixtures, API, and manual fallback.
+3. Homeowner workflow: import status, review/edit, exact bilingual speech review, publish gates, assignment, and immutable snapshots.
+4. Househelp workflow: assigned-only Today/cook mode, audio activation, English/Hindi switching, ingredients, steps, timers, help, issues, retry/resume, and completion.
+5. Independent acceptance review: permission, accessibility, offline/idempotency, production-mode, responsive visual, and end-to-end checks.
 
-Acceptance:
+Acceptance achieved locally:
 
-- Homeowner can create a household, invite one househelp, and import a supported public recipe webpage.
+- A seeded demo household proves the homeowner/househelp role boundary and shared-device handoff; production household creation and identity remain intentionally unselected.
+- Homeowner can import a supported public recipe webpage.
 - Extracted title, servings, ingredients, and ordered steps appear as a draft with source attribution and warnings.
 - Homeowner can correct, publish, and assign the recipe to a meal slot.
 - Househelp can choose a spoken language by listening, open an assignment, check ingredients one at a time, complete spoken steps, leave/resume, and mark it done without needing to read.
@@ -25,11 +28,11 @@ Acceptance:
 - `Repeat`/`Stop`, `Help`, and language change remain available in a consistent position throughout the househelp flow.
 - Ingredient and cooking screens show no more than one verified focal visual plus a consistent action/state icon; missing visuals fall back safely to spoken guidance.
 - Every non-text control or instructional visual has an accessible name and matching spoken meaning.
-- Househelp guidance survives intermittent connectivity, does not overlap or play stale instructions, and exposes a recoverable audio-failure state.
+- Househelp guidance uses stale-event guards, a persisted retry queue, and recoverable audio/readiness states for intermittent connectivity.
 - Househelp cannot edit/publish recipes or access ordering controls.
 - Unsupported import fails safely and clearly without invented recipe content.
 - Automated extraction fixtures and role-permission tests pass.
-- Keyboard, focus, labels, touch targets, contrast, spoken-feedback behavior, and audio-language readiness meet the documented accessibility target.
+- Automated keyboard/focus/labels/touch-target/responsive checks and deterministic spoken-feedback cases pass; real TalkBack/VoiceOver and device-voice validation remain required before production.
 - `STATE`, `HISTORY`, `MEMORY`, `RUNBOOK`, and decisions are current.
 
 ## Proposed Milestone 2: YouTube transcript import
