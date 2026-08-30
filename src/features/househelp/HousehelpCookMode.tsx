@@ -409,6 +409,16 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
     ? null
     : `${Math.floor(remainingSeconds / 60)}:${String(remainingSeconds % 60).padStart(2, "0")}`;
 
+  async function openShoppingList() {
+    queue.cancel();
+    try {
+      await adapter.speak(state.locale === "hi-IN" ? "खरीदारी की सूची" : "Shopping list", state.locale);
+    } catch {
+      // Navigation remains available when speech fails.
+    }
+    window.location.assign("/househelp/shopping");
+  }
+
   const topBar = state.view !== "audio_gate" ? (
     <header className={styles.topBar}>
       {!["language", "audio_error"].includes(state.view) ? (
@@ -500,6 +510,9 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
         <button className={styles.primaryButton} type="button" onClick={() => void runEvent({ type: "START_OR_RESUME" })}>
           <span aria-hidden="true">▶</span>
           {label(state.locale, state.sessionId ? "resume" : "start")}
+        </button>
+        <button className={styles.secondaryButton} type="button" onClick={() => void openShoppingList()}>
+          {state.locale === "hi-IN" ? "खरीदारी की सूची" : "Shopping list"}
         </button>
         <HelpButton locale={state.locale} onClick={() => void runEvent({ type: "HELP" })} />
       </section>

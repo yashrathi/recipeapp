@@ -9,6 +9,7 @@ export const Capabilities = [
   "assignment:view",
   "cooking:progress",
   "issue:report",
+  "shopping:view",
   "shopping:manage",
 ] as const;
 
@@ -16,7 +17,7 @@ export type Capability = (typeof Capabilities)[number];
 
 const roleCapabilities: Record<HouseholdRole, ReadonlySet<Capability>> = {
   homeowner: new Set(Capabilities),
-  househelp: new Set(["assignment:view", "cooking:progress", "issue:report"]),
+  househelp: new Set(["assignment:view", "cooking:progress", "issue:report", "shopping:view"]),
 };
 
 export interface HouseholdActor {

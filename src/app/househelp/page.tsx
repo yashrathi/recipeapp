@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { HousehelpCookMode } from "@/features/househelp/HousehelpCookMode";
@@ -20,6 +21,7 @@ export default async function HousehelpPage() {
           <div className={styles.unavailableMark} aria-hidden="true">✓</div>
           <h1>No cooking task now</h1>
           <p>आज अभी खाना बनाने का कोई काम नहीं है।</p>
+          <Link className={styles.secondaryButton} href="/househelp/shopping">Shopping list · खरीदारी</Link>
         </main>
       );
     }

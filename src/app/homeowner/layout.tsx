@@ -20,7 +20,7 @@ export default async function HomeownerLayout({ children }: { children: ReactNod
           <Link href="/homeowner">Today</Link>
           <Link href="/homeowner/recipes">Recipes</Link>
           <Link href="/homeowner/recipes/new">Add recipe</Link>
-          {isDemoAuthEnabled() ? <Link href="/homeowner/instamart-prices">Prices</Link> : null}
+          {isDemoAuthEnabled() ? <Link href="/homeowner/shopping">Shopping</Link> : null}
         </nav>
         <form action="/api/session/logout" method="post">
           <button className={styles.logoutButton} type="submit">Exit demo</button>
