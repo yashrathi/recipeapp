@@ -6,7 +6,7 @@ The sequence uses complete vertical slices. Later milestones may change after us
 
 ## Approved maintenance: English-first authoring and automatic Hindi
 
-Status: implemented and verified on isolated branch `feature/automatic-hindi-translation`; pending explicit integration authorization.
+Status: integrated into `main` after explicit authorization and verified locally.
 
 Goal: remove manual Hindi as a homeowner prerequisite while preserving complete, immutable English/Hindi cook guidance.
 
@@ -29,6 +29,7 @@ Completed workstreams:
 3. Homeowner workflow: import status, review/edit, exact bilingual speech review, publish gates, assignment, and immutable snapshots.
 4. Househelp workflow: assigned-only Today/cook mode, audio activation, English/Hindi switching, ingredients, steps, timers, help, issues, retry/resume, and completion.
 5. Independent acceptance review: permission, accessibility, offline/idempotency, production-mode, responsive visual, and end-to-end checks.
+6. Approved househelp continuation follow-up: a bilingual one-item-at-a-time menu of active assignments and published household recipes, explicit task choice, ad-hoc `Cook now`, resume, and completion return. Draft and archived recipes remain private.
 
 Acceptance achieved locally:
 
@@ -36,7 +37,9 @@ Acceptance achieved locally:
 - Homeowner can import a supported public recipe webpage.
 - Extracted title, servings, ingredients, and ordered steps appear as a draft with source attribution and warnings.
 - Homeowner can correct, publish, and assign the recipe to a meal slot.
-- Househelp can choose a spoken language by listening, open an assignment, check ingredients one at a time, complete spoken steps, leave/resume, and mark it done without needing to read.
+- Househelp can choose a spoken language by listening, browse active assignments and published household recipes one at a time, choose/resume an assignment or start an ad-hoc cooking run after an in-person request, check ingredients one at a time, complete spoken steps, and mark it done without needing to read.
+- The confirmed spoken language is reused across menu choices, task routes, reload/resume, and completion return; only the explicit language control reopens selection.
+- After `Done`, the completed assignment disappears from the cooking menu and the next assigned dish or no-task state is shown.
 - Every househelp control announces itself when activated; `Next` advances and automatically speaks the full new instruction.
 - First-time setup works in environments that require an initial user gesture before audio begins.
 - `Repeat`/`Stop`, `Help`, and language change remain available in a consistent position throughout the househelp flow.

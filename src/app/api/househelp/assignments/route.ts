@@ -11,7 +11,10 @@ export async function GET() {
   try {
     const actor = await getHousehelpActor();
     const repository = new HousehelpRepository(getDatabaseHandle().client);
-    return NextResponse.json({ assignments: repository.listVisible(actor) });
+    return NextResponse.json({
+      assignments: repository.listVisible(actor),
+      recipes: repository.listCookableRecipes(actor),
+    });
   } catch (error) {
     return househelpErrorResponse(error);
   }

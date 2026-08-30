@@ -9,7 +9,7 @@ Status: Milestone 1 product defaults approved on 2026-08-30. Open questions rema
 | Create/import a recipe | Yes | No |
 | Review/edit/publish recipe | Yes | No |
 | Assign or reschedule cooking | Yes | No |
-| View assigned recipe | Yes | Yes, assigned household tasks only |
+| View cookable recipe | Yes | Yes, active assignments and published household recipes; never drafts/archived versions |
 | Run cook mode and mark progress | Optional | Yes |
 | Report missing item/question | Yes | Yes |
 | Choose spoken language/replay guidance | Optional | Yes |
@@ -48,12 +48,12 @@ Recommended authentication assumption: homeowner uses email/phone sign-in; house
 | ID | Screen | Purpose | Key content/actions |
 |---|---|---|---|
 | HH0 | Spoken-language setup | Hear language samples and select one without reading | sample playing, selected, audio unavailable |
-| HH1 | Today | Hear the next assigned meal and start/resume it | start, resume, no task, changed task |
+| HH1 | Cooking menu | Hear and browse active assignments and published household recipes one item at a time | next item, start, resume, cook now, no recipe, changed task |
 | HH2 | Task briefing | Hear dish, target time, servings, and homeowner note | repeat, ingredients, start, cannot complete |
 | HH3 | Ingredient check | Confirm one spoken ingredient with one verified visual at a time | have it, missing, repeat, visual unavailable, complete |
 | HH4 | Cook mode | Hear and see one cooking action at a time | repeat, next, timer, optional media help, audio/visual failure |
 | HH5 | Completion | Hear confirmation and report a simple outcome | done, changed, need help |
-| HH6 | Upcoming/completed | Hear future or recent assignments one item at a time | next item, repeat, back |
+| HH6 | Completed history | Hear recent completed assignments one item at a time | next item, repeat, back |
 
 ### System and exception surfaces
 
@@ -107,17 +107,18 @@ Failure path: show `Transcript unavailable` and offer retry/manual entry instead
 
 ### E. Prepare and cook
 
-1. At first setup, one full-screen speaker control invites the initial tap needed to start audio. The app then speaks the language-selection prompt; each language option says its own name aloud, and the chosen language is immediately confirmed and remembered.
-2. Househelp opens Today. The app automatically announces the next task, time, and single primary action.
-3. Opening the task speaks a short briefing: dish, servings, target time, and homeowner note.
-4. Ingredient check presents one item at a time with a verified ingredient photo when available and asks a spoken question such as `Do you have one cup of spinach?`
-5. Tapping `Have it`, `Missing`, or `Repeat` speaks the control label. `Missing` also confirms that the homeowner was notified.
-6. Cook mode records the active recipe version, shows one action visual, and automatically speaks the first instruction.
-7. Tapping `Next` says `Next`, advances, and speaks the full next instruction. `Repeat` replays without changing progress; `Help` speaks the available help choices.
-8. A user may tap a verified step image or video for help. Motion never auto-plays and never blocks `Repeat`, `Next`, or `Help`.
-9. Timers announce start, remaining-time checkpoints only when useful, and completion without overlapping instructions.
-10. Progress auto-saves. After interruption or reconnection, the app announces the restored step before accepting input.
-11. Completion is spoken and requires one large confirmation. Homeowner sees status: not started, preparing, cooking, blocked, or done.
+1. At first setup, one full-screen speaker control invites the initial tap needed to start audio. The app then speaks the language-selection prompt; each language option says its own name aloud, and the chosen language is immediately confirmed and remembered on that device. Later menu visits, task openings, reloads, and completion returns reuse it; language setup appears again only when the househelp explicitly chooses `Change language`.
+2. Househelp opens the cooking menu. The app announces one item at a time. Assignments include date, meal, target time, and `Start`/`Resume`; published household recipes are identified as such and offer `Cook now`. `Next` cycles through both.
+3. If househelp was asked in person to make an unassigned dish, `Cook now` creates one homeowner-visible ad-hoc cooking run and atomically pins the current reviewed bilingual recipe version before opening it.
+4. Opening the task speaks a short briefing: dish, servings, target time, and homeowner note when present.
+5. Ingredient check presents one item at a time with a verified ingredient photo when available and asks a spoken question such as `Do you have one cup of spinach?`
+6. Tapping `Have it`, `Missing`, or `Repeat` speaks the control label. `Missing` also confirms that the homeowner was notified.
+7. Cook mode records the active recipe version, shows one action visual, and automatically speaks the first instruction.
+8. Tapping `Next` says `Next`, advances, and speaks the full next instruction. `Go back` reviews an earlier instruction without rewinding saved progress. `Repeat` replays without changing progress; `Help` speaks the available help choices.
+9. A user may tap a verified step image or video for help. Motion never auto-plays and never blocks `Repeat`, `Next`, or `Help`.
+10. Timers announce start, remaining-time checkpoints only when useful, and completion without overlapping instructions.
+11. Progress auto-saves. After interruption or reconnection, the app announces the restored step before accepting input.
+12. Completion is spoken and requires one large confirmation. Homeowner sees status: not started, preparing, cooking, blocked, or done; after confirmation the househelp returns to the cooking menu and the completed run is no longer offered as active. A persistent `Cooking menu` control and bounded automatic fallback keep this exit usable even when sync or speech stalls.
 
 The core path must remain operable by listening and tapping. Text and simple icons reinforce the spoken interface but are not required to understand it.
 
@@ -184,8 +185,8 @@ Preserve the original ingredient line even when normalized quantity/unit parsing
 
 | Entity | Essential fields |
 |---|---|
-| CookingAssignment | household, recipe version, assignee, creator, date/time, meal, target servings, notes, status |
-| CookingSession | assignment, pinned recipe version, started/finished times, current step, status, last synced time |
+| CookingAssignment | household, origin (`scheduled` or `ad_hoc`), recipe version, assignee, creator, date/time, meal, target servings, notes, status |
+| CookingSession | assignment or ad-hoc run, pinned recipe version, started/finished times, current step, status, last synced time |
 | StepProgress | session, step, state, started/completed time, timer state |
 | Issue | assignment/session, reporter, type, message, ingredient/step reference, status, resolution |
 | AudioReadiness | assignment, locale, required asset count, ready/failed count, checked time, failure reason |
@@ -271,7 +272,7 @@ Shopping list: `draft → reviewed → handed_off → confirmed`, with `failed` 
 4. Does the homeowner want inventory tracking, or only a one-time `already at home` checklist?
 5. Which meal scheduling model fits: exact time, meal slot, or simple day?
 6. Is Swiggy a hard requirement, and is official partner/API access available?
-7. Should household members see only assigned recipes or the whole household library?
+7. Resolved for Milestone 1 follow-up: househelp sees active assignments plus published household recipes, but never drafts or archived versions.
 8. Should audio use a consistent generated voice, available device voices, or pre-recorded human voice packs for the first launch languages?
 9. Will recipe visuals come from a curated licensed ingredient/action library, homeowner uploads, allowed source media, or a combination?
 

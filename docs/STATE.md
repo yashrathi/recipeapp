@@ -4,7 +4,7 @@ Updated: 2026-08-30
 
 ## Current milestone
 
-Milestone 2 is integrated and verified locally on `main`: reviewed recipe import now supports wider public webpages through a Firecrawl fallback and public YouTube videos through available transcript evidence plus OpenAI structured extraction. Milestone 1 remains integrated and verified.
+Milestones 1 and 2, English-first automatic Hindi, and the requested househelp cooking-menu/one-time-language repair are integrated locally on `main`. Combined post-merge verification is in progress.
 
 ## Integrated task branches and worktrees
 
@@ -14,20 +14,21 @@ Milestone 2 is integrated and verified locally on `main`: reviewed recipe import
 - Visible househelp task `01a05153-f6f9-71c0-9997-699f2235d8ac`, branch `feature/househelp-cook-mode`, at `/Users/yashmac16/.codex/worktrees/85f5/Recipe App`
 - Visible acceptance-review task `01a05154-027f-7cc2-a232-a7dedd36ac8c`, branch `review/milestone-1-acceptance`, at `/Users/yashmac16/.codex/worktrees/840f/Recipe App`
 - Completed Milestone 2 worker `/root/broad_source_import`, branch `feature/broad-source-import`, at `/Users/yashmac16/Documents/ChatGPT/Recipe App-broad-source-import`; reviewed commits were integrated as `31ebe0c`, `d2ff144`, `9e845e3`, and `6322476` after explicit authorization.
-- Completed English-first authoring worker, branch `feature/automatic-hindi-translation`, at `/Users/yashmac16/Documents/ChatGPT/Recipe App-auto-hindi`; implementation and verification are complete, isolated, and not merged pending explicit authorization.
+- Completed English-first authoring worker, branch `feature/automatic-hindi-translation`, at `/Users/yashmac16/Documents/ChatGPT/Recipe App-auto-hindi`; reviewed commit `3c370bc` was integrated to `main` as `5bbcf93` after explicit authorization.
+- Completed househelp-flow repair, branch `fix/househelp-main-menu-flow`, at `/Users/yashmac16/Documents/ChatGPT/Recipe App-househelp-flow-fix`; commits `1b95369`, `fac34a2`, `37a703b`, and `a477a13` are included in the authorized local merge.
 
-All accepted Milestone 1 and Milestone 2 worker commits are cherry-picked to `main`. Worktrees are retained for review history; there is no active implementation worker.
+All accepted Milestone 1, Milestone 2, automatic-Hindi, and househelp-flow work is integrated locally on `main`. Worktrees are retained for review history; there is no active implementation worker.
 
 ## Working behavior
 
-- The Node 24/Next.js 16 foundation, frozen contracts, five deterministic SQLite migrations, signed development-only role sessions, server-side household policy, seed, and test harness are committed.
-- On the active maintenance branch, a homeowner can author and review the recipe and assignment note in English; blank Hindi dish, ingredient, step, and note fields are generated server-side, while any supplied Hindi is treated as an optional override. Publication and assignment still pin complete English/Hindi snapshots.
-- A househelp sees only their next assigned task and can use English/Hindi audio setup, one-at-a-time ingredient checks, automatically spoken steps, Repeat/Stop/Help/language controls, timers, resume, issue reporting, and completion on a narrow phone. Progress is persisted server-side and mirrored in a bounded local retry queue for intermittent connectivity.
+- The Node 24/Next.js 16 foundation now has six deterministic SQLite migrations, signed development-only role sessions, server-side household policy, seed, and test harness.
+- A homeowner can author and review recipe guidance and assignment notes in English; blank Hindi values are generated server-side, optional Hindi overrides are preserved, and publication/assignment still pin complete immutable bilingual snapshots.
+- A househelp hears and browses active assignments and current published household recipes one at a time. They can choose/resume assigned work or use `Cook now` after an in-person request, review earlier steps locally, and return to the menu explicitly or after `Done`.
+- Spoken-language confirmation occurs once per device. The selected locale is reused when entering a task, resuming after reload, and returning after completion; language selection reappears only through the explicit change control.
 - Visuals are deliberately light: bundled focal state/action illustrations have accessible equivalents, while spoken guidance remains authoritative.
-- Integrated `npm run verify` passes lint, strict TypeScript, 18 files / 187 tests, and the production build. Integrated Playwright acceptance passes 10 desktop/mobile flows with 2 intentional desktop skips for phone-only cook-mode cases.
-- The isolated automatic-Hindi branch passes lint, strict TypeScript, 19 files / 192 tests, the production build, and all 10 applicable Playwright desktop/mobile flows with 2 intentional desktop skips.
+- The combined integration is awaiting its full post-merge verification baseline.
 - The exact Pinch-of-Yum page succeeds through both repaired direct fetch and forced Firecrawl fallback with deterministic extraction (12 ingredients, 7 steps). A live captioned YouTube recipe succeeds through Firecrawl transcript retrieval and OpenAI evidence extraction as `partial_success` (3 evidenced ingredients, 12 steps, language recorded, no timestamps fabricated). Credentials and raw source/transcript text were not printed or persisted by the smoke harness.
-- Verified `main` is pushed to the private GitHub repository `https://github.com/yashrathi/recipeapp.git`; GitHub default branch is `main`.
+- The private GitHub repository is `https://github.com/yashrathi/recipeapp.git` with default branch `main`; the automatic-Hindi and househelp-flow integrations are currently local and have not been pushed.
 
 ## Blockers
 
@@ -50,4 +51,4 @@ All accepted Milestone 1 and Milestone 2 worker commits are cherry-picked to `ma
 
 ## Immediate next step
 
-Select a compatible public hosting target, persistent datastore, and production identity approach before deploying. No Vercel/Render/Railway/Fly/Cloudflare link or deployment configuration exists in the repository. Real-device househelp sessions remain required before production launch.
+Complete combined post-merge verification, then select a compatible public hosting target, persistent datastore, and production identity approach. Real-device househelp sessions remain required before production launch.

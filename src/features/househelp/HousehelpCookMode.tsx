@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "@/app/househelp/househelp.module.css";
 
-import { label, localeBundles, resolvePrompt } from "./locales";
+import { formatMessage, label, localeBundles, resolvePrompt } from "./locales";
 import {
   createInitialHousehelpState,
   isSpeechTokenCurrent,
@@ -15,6 +16,7 @@ import {
   type HousehelpEvent,
   type HousehelpPersistenceEffect,
 } from "./machine";
+import { readHousehelpPreferences, rememberHousehelpLocale } from "./preferences";
 import { resolveReadiness } from "./readiness";
 import { BrowserSpeechAdapter, SerializedSpeechQueue } from "./speech";
 import type {
@@ -65,6 +67,7 @@ function stateWithProgress(initialData: InitialData): HousehelpState {
     sessionId: progress.sessionId,
     ingredientIndex: progress.ingredientIndex,
     stepIndex: progress.stepIndex,
+    furthestStepIndex: progress.stepIndex,
     ingredientStates: progress.ingredientStates,
     timer: progress.timer,
     lastPersistedRevision: progress.revision,
@@ -151,6 +154,7 @@ function mutationBody(
 
 export function HousehelpCookMode({ initialData }: { initialData: InitialData }) {
   const { snapshot } = initialData;
+  const router = useRouter();
   const adapter = useMemo(() => new BrowserSpeechAdapter(), []);
   const queue = useMemo(() => new SerializedSpeechQueue(adapter), [adapter]);
   const [state, setRenderedState] = useState(() => stateWithProgress(initialData));
@@ -162,6 +166,8 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
   const pendingRef = useRef<PendingMutation[]>([]);
   const persistenceBusyRef = useRef(false);
   const eventRunnerRef = useRef<(event: HousehelpEvent) => Promise<void>>(async () => undefined);
+  const doneNavigationTimeoutRef = useRef<number | null>(null);
+  const menuNavigationPendingRef = useRef(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const mediaFrameRef = useRef<HTMLIFrameElement>(null);
 
@@ -172,10 +178,32 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
 
   useEffect(() => {
     const local = readLocalEnvelope(initialData);
-    if (!local) return;
-    pendingRef.current = local.pending;
-    if (local.state.lastPersistedRevision >= stateRef.current.lastPersistedRevision) {
-      setState({ ...local.state, view: "audio_gate", audioGate: "locked", speechStatus: "idle" });
+    const preferences = readHousehelpPreferences();
+    if (local) pendingRef.current = local.pending;
+    const restored = local && local.state.lastPersistedRevision >= stateRef.current.lastPersistedRevision
+      ? {
+        ...local.state,
+        furthestStepIndex: local.state.furthestStepIndex ?? local.state.stepIndex,
+      }
+      : stateRef.current;
+    if (preferences) {
+      const next = {
+        ...restored,
+        locale: preferences.locale,
+        view: "today" as const,
+        audioGate: "unlocked" as const,
+        readiness: "ready_device_tts" as const,
+        speechStatus: "idle" as const,
+        currentPrompt: null,
+      };
+      setState(next);
+    } else if (local) {
+      setState({
+        ...restored,
+        view: "audio_gate",
+        audioGate: "locked",
+        speechStatus: "idle",
+      });
     }
   }, [initialData, setState]);
 
@@ -236,7 +264,40 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
     return () => window.clearInterval(interval);
   }, [state.timer]);
 
-  useEffect(() => () => queue.cancel(), [queue]);
+  useEffect(() => () => {
+    queue.cancel();
+    if (doneNavigationTimeoutRef.current !== null) {
+      window.clearTimeout(doneNavigationTimeoutRef.current);
+    }
+  }, [queue]);
+
+  const replaceWithMenu = useCallback(() => {
+    if (doneNavigationTimeoutRef.current !== null) {
+      window.clearTimeout(doneNavigationTimeoutRef.current);
+      doneNavigationTimeoutRef.current = null;
+    }
+    router.replace("/househelp");
+  }, [router]);
+
+  const goToMenu = useCallback(() => {
+    if (menuNavigationPendingRef.current) return;
+    menuNavigationPendingRef.current = true;
+    queue.cancel();
+    const locale = stateRef.current.locale;
+    let navigated = false;
+    const navigate = () => {
+      if (navigated) return;
+      navigated = true;
+      replaceWithMenu();
+    };
+    const timeout = window.setTimeout(navigate, 1_500);
+    void adapter.speak(formatMessage(locale, "control.cooking_menu"), locale)
+      .catch(() => undefined)
+      .finally(() => {
+        window.clearTimeout(timeout);
+        navigate();
+      });
+  }, [adapter, queue, replaceWithMenu]);
 
   const persistEffects = useCallback(async (
     effects: HousehelpPersistenceEffect[],
@@ -318,6 +379,7 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
       taskExists: true,
     });
     if (!transition.accepted) return;
+    if (event.type === "SELECT_LANGUAGE") rememberHousehelpLocale(event.locale);
 
     let next = transition.state;
     saveLocalEnvelope(snapshot, next, pendingRef.current);
@@ -341,6 +403,13 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
       await queue.play(revoked.speech, speechToken(next), (token) =>
         isSpeechTokenCurrent(token, stateRef.current));
       return;
+    }
+
+    if (event.type === "DONE") {
+      if (doneNavigationTimeoutRef.current !== null) {
+        window.clearTimeout(doneNavigationTimeoutRef.current);
+      }
+      doneNavigationTimeoutRef.current = window.setTimeout(replaceWithMenu, 8_000);
     }
 
     if (transition.speech.length === 0 && !transition.playAlarmCue) {
@@ -380,6 +449,10 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
     if (outcome !== "completed" || !isSpeechTokenCurrent(token, stateRef.current)) return;
 
     setState({ ...stateRef.current, speechStatus: "idle" });
+    if (event.type === "DONE") {
+      replaceWithMenu();
+      return;
+    }
     if (event.type === "PLAY" || event.type === "REPLAY_MEDIA") {
       setMediaPlaybackActive(true);
       window.setTimeout(() => {
@@ -394,7 +467,7 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
       const endsAt = new Date(Date.now() + timer.durationSeconds * 1_000).toISOString();
       await eventRunnerRef.current({ type: "TIMER_STARTED", endsAt });
     }
-  }, [adapter, persistEffects, queue, setState, snapshot]);
+  }, [adapter, persistEffects, queue, replaceWithMenu, setState, snapshot]);
 
   eventRunnerRef.current = runEvent;
 
@@ -468,6 +541,8 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
               className={`${styles.languageButton} ${state.locale === locale ? styles.selected : ""}`}
               type="button"
               onClick={() => void runEvent({ type: "SELECT_LANGUAGE", locale })}
+              disabled={persistenceBusy}
+              aria-busy={persistenceBusy}
               aria-label={localeBundles[locale].languageName}
               aria-pressed={state.locale === locale}
               lang={locale}
@@ -477,7 +552,13 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
             </button>
           ))}
         </div>
-        <button className={styles.primaryButton} type="button" onClick={() => void runEvent({ type: "CONTINUE" })}>
+        <button
+          className={styles.primaryButton}
+          type="button"
+          disabled={persistenceBusy}
+          aria-busy={persistenceBusy}
+          onClick={() => void runEvent({ type: "CONTINUE" })}
+        >
           {label(state.locale, "continue")}
           <span aria-hidden="true">→</span>
         </button>
@@ -501,6 +582,7 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
           <span aria-hidden="true">▶</span>
           {label(state.locale, state.sessionId ? "resume" : "start")}
         </button>
+        <MenuButton locale={state.locale} onClick={goToMenu} />
         <HelpButton locale={state.locale} onClick={() => void runEvent({ type: "HELP" })} />
       </section>
     );
@@ -518,6 +600,7 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
           {label(state.locale, "check_ingredients")}
           <span aria-hidden="true">→</span>
         </button>
+        <MenuButton locale={state.locale} onClick={goToMenu} />
         <HelpButton locale={state.locale} onClick={() => void runEvent({ type: "HELP" })} />
       </section>
     );
@@ -555,6 +638,7 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
             {label(state.locale, "start_cooking")}<span aria-hidden="true">→</span>
           </button>
         )}
+        <MenuButton locale={state.locale} onClick={goToMenu} />
         <HelpButton locale={state.locale} onClick={() => void runEvent({ type: "HELP" })} />
       </section>
     );
@@ -588,6 +672,18 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
         })}>
           {label(state.locale, "next")}<span aria-hidden="true">→</span>
         </button>
+        <div className={styles.navigationRow}>
+          <button
+            className={styles.secondaryButton}
+            type="button"
+            disabled={state.stepIndex === 0 || persistenceBusy}
+            aria-busy={persistenceBusy}
+            onClick={() => void runEvent({ type: "BACK" })}
+          >
+            <span aria-hidden="true">←</span>{label(state.locale, "back")}
+          </button>
+          <MenuButton locale={state.locale} onClick={goToMenu} />
+        </div>
         <HelpButton locale={state.locale} onClick={() => void runEvent({ type: "HELP" })} />
       </section>
     );
@@ -610,6 +706,7 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
             idempotencyKey: `${state.sessionId}:tell_homeowner:${state.stepIndex}:${state.lastPersistedRevision}`,
           })}>{label(state.locale, "tell_homeowner")}</button>
           <button className={styles.textButton} type="button" onClick={() => void runEvent({ type: "BACK" })}>{label(state.locale, "back")}</button>
+          <MenuButton locale={state.locale} onClick={goToMenu} />
         </div>
       </section>
     );
@@ -636,6 +733,7 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
           </button>
           <button className={styles.secondaryButton} type="button" onClick={() => void runEvent({ type: "REPLAY_MEDIA" })}>{label(state.locale, "replay")}</button>
           <button className={styles.textButton} type="button" onClick={() => { setMediaPlaybackActive(false); void runEvent({ type: "BACK" }); }}>{label(state.locale, "back")}</button>
+          <MenuButton locale={state.locale} onClick={goToMenu} />
         </div>
       </section>
     );
@@ -649,6 +747,20 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
           idempotencyKey: `${state.sessionId}:done:${state.assignmentId}:${state.lastPersistedRevision + 1}`,
         })}>{label(state.locale, "done")}</button>
         {state.completed ? <p className={styles.confirmation}>{localeBundles[state.locale].messages["completion.done"]}</p> : null}
+        <div className={styles.navigationRow}>
+          {!state.completed ? (
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              disabled={persistenceBusy}
+              aria-busy={persistenceBusy}
+              onClick={() => void runEvent({ type: "BACK" })}
+            >
+              <span aria-hidden="true">←</span>{label(state.locale, "back")}
+            </button>
+          ) : null}
+          <MenuButton locale={state.locale} onClick={goToMenu} />
+        </div>
         <HelpButton locale={state.locale} onClick={() => void runEvent({ type: "HELP" })} />
       </section>
     );
@@ -662,6 +774,7 @@ export function HousehelpCookMode({ initialData }: { initialData: InitialData })
           type: "TELL_HOMEOWNER",
           idempotencyKey: `${state.assignmentId}:audio_failure:${state.lastPersistedRevision}`,
         })}>{label(state.locale, "tell_homeowner")}</button>
+        <MenuButton locale={state.locale} onClick={goToMenu} />
       </section>
     );
   }
@@ -689,6 +802,14 @@ function HelpButton({ locale, onClick }: { locale: HousehelpState["locale"]; onC
   return (
     <button className={styles.helpButton} type="button" onClick={onClick}>
       <span aria-hidden="true">?</span>{label(locale, "help")}
+    </button>
+  );
+}
+
+function MenuButton({ locale, onClick }: { locale: HousehelpState["locale"]; onClick: () => void }) {
+  return (
+    <button className={styles.secondaryButton} type="button" onClick={onClick}>
+      <span aria-hidden="true">⌂</span>{label(locale, "cooking_menu")}
     </button>
   );
 }

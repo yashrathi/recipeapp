@@ -221,6 +221,7 @@ export const cookingAssignments = sqliteTable("cooking_assignments", {
   targetServings: real("target_servings").notNull(),
   selectedLocale: text("selected_locale", { enum: ["en-IN", "hi-IN"] }).notNull(),
   notes: text("notes"),
+  origin: text("origin", { enum: ["scheduled", "ad_hoc"] }).notNull().default("scheduled"),
   status: text("status").notNull(),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),

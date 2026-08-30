@@ -144,6 +144,12 @@
   font-weight: 750;
 }
 
+.menuDate {
+  margin: -0.75rem 0 1.5rem;
+  color: var(--hh-muted);
+  font-weight: 750;
+}
+
 .primaryButton,
 .warningButton,
 .secondaryButton,
@@ -168,7 +174,8 @@
 }
 
 .primaryButton:hover { background: var(--hh-green-dark); }
-.primaryButton:disabled { cursor: default; opacity: 0.55; }
+.primaryButton:disabled,
+.secondaryButton:disabled { cursor: default; opacity: 0.55; }
 
 .warningButton {
   border-color: #e3b6a9;
@@ -189,6 +196,13 @@
 .actionStack {
   display: grid;
   gap: 0.8rem;
+}
+
+.navigationRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
 }
 
 .helpButton {

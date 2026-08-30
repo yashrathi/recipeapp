@@ -69,7 +69,7 @@ describe("SQLite repositories and seed", () => {
       )
       .get(DEMO_IDS.guidance);
     expect(guidance).toMatchObject({
-      guidance_key: "cook.step_add",
+      guidance_key: `cook.step.${DEMO_IDS.stepAdd}`,
       locale: "en-IN",
       content_hash: createHash("sha256")
         .update("Now add half a cup of spinach.", "utf8")

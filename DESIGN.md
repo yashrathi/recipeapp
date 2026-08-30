@@ -24,7 +24,7 @@ Househelp navigation is deliberately shallow:
 3. One-at-a-time cooking steps
 4. Completion
 
-Upcoming work and settings are secondary. A persistent language/audio control is available from every househelp screen.
+Upcoming work and settings are secondary. A persistent language/audio control is available from every househelp screen. Active task screens also keep a spoken `Cooking menu` escape available so sync or speech failure cannot trap the worker.
 
 ## Interaction principles
 
@@ -81,6 +81,9 @@ Househelp screens use one focal visual at a time. Audio remains authoritative; t
 - Use short verbs: `Add`, `Review`, `Assign`, `Start`, `Done`, `Ask for help`.
 - Househelp labels are one to three words where possible. Text remains as a visual confirmation but is not the primary instruction channel.
 - Automatically speak the current task, ingredient, or step on entry. A large `Repeat` control is always available.
+- Present assignments and published household recipes as one audio-first, one-item-at-a-time cooking menu. Assigned items speak date, meal, target time, and `Start`/`Resume`; library items say `Household recipe` and offer `Cook now`. `Next` cycles through both without exposing drafts or archived recipes.
+- During cooking, `Go back` reviews the previous instruction without rewinding or duplicating saved progress. The completion screen can return to the final instruction until `Done` is pressed.
+- After `Done` is persisted or safely queued, return to the cooking menu instead of leaving the worker on a terminal completion screen. The completed run is no longer active, while its published recipe remains available for a future request. This return has a bounded fallback and never depends indefinitely on speech completion.
 - The persistent speaker control becomes `Stop` while speech is playing and returns to `Repeat` when speech ends.
 - On activation, speak the control and outcome: `Missing. The homeowner has been told.`
 - Keep spoken steps short, concrete, and ordered: action + quantity + ingredient + timing/heat when relevant.
@@ -91,6 +94,7 @@ Househelp screens use one focal visual at a time. Audio remains authoritative; t
 - Store canonical recipe content separately from translations.
 - Spoken guidance and interface phrases are versioned by language. A reviewed source version remains the authority.
 - Language is chosen during setup with spoken samples and can be changed from every househelp screen without entering settings.
+- Remember the confirmed device language across the cooking menu, assigned tasks, recipe-picked tasks, reloads, and completion return. Never insert language setup between menu selection and cooking.
 - The homeowner may preselect a language on the invite, but the househelp confirms it by hearing a sample.
 - Launch languages require user validation; the architecture must support English, Hindi, and household-selected Indian languages without hard-coded strings.
 - Audio guidance is required in the first usable slice, not deferred enhancement work.

@@ -195,6 +195,7 @@ export function createInitialHousehelpState(
     readiness: "checking",
     ingredientIndex: 0,
     stepIndex: 0,
+    furthestStepIndex: 0,
     ingredientStates: Object.fromEntries(
       snapshot.recipe.ingredients.map((ingredient) => [ingredient.id, "unchecked"]),
     ),
@@ -450,6 +451,7 @@ export function transitionHousehelp(
       state = rememberKey(enterView({
         ...state,
         stepIndex: 0,
+        furthestStepIndex: 0,
         lastPersistedRevision: state.lastPersistedRevision + 1,
       }, "cook"), key);
       state.currentPrompt = stepPrompt(state, context);
@@ -487,6 +489,11 @@ export function transitionHousehelp(
     case "NEXT": {
       const steps = context.snapshot.recipe.steps;
       const currentStep = steps[currentState.stepIndex]!;
+      if (currentState.stepIndex < currentState.furthestStepIndex) {
+        state.stepIndex = currentState.stepIndex + 1;
+        state.currentPrompt = stepPrompt(state, context, "cook.step_next");
+        return result(state, [promptUtterance(state.locale, state.currentPrompt)]);
+      }
       const finalStep = currentState.stepIndex >= steps.length - 1;
       state = rememberKey({
         ...state,
@@ -502,6 +509,7 @@ export function transitionHousehelp(
         );
       }
       state.stepIndex = currentState.stepIndex + 1;
+      state.furthestStepIndex = state.stepIndex;
       const nextSpeech = stepPrompt(state, context, "cook.step_next");
       state.currentPrompt = stepPrompt(state, context);
       return result(
@@ -539,6 +547,25 @@ export function transitionHousehelp(
     }
 
     case "BACK": {
+      if (currentState.view === "cook") {
+        if (currentState.stepIndex === 0) {
+          return result(currentState, [], { cancelPreviousSpeech: false, accepted: false });
+        }
+        state = enterView({ ...state, stepIndex: currentState.stepIndex - 1 }, "cook");
+        state.currentPrompt = stepPrompt(state, context);
+        return result(state, [
+          utterance(state.locale, "control.back"),
+          promptUtterance(state.locale, state.currentPrompt),
+        ]);
+      }
+      if (currentState.view === "completion" && !currentState.completed) {
+        state = enterView({ ...state, stepIndex: currentState.furthestStepIndex }, "cook");
+        state.currentPrompt = stepPrompt(state, context);
+        return result(state, [
+          utterance(state.locale, "control.back"),
+          promptUtterance(state.locale, state.currentPrompt),
+        ]);
+      }
       const target = state.returnView ?? "today";
       const preserved = state.returnPrompt;
       state = enterView({ ...state, returnView: null, returnPrompt: null, mediaStatus: "stopped" }, target);

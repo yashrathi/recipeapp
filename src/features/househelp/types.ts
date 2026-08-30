@@ -58,6 +58,7 @@ export interface HousehelpState {
   readiness: AudioReadiness;
   ingredientIndex: number;
   stepIndex: number;
+  furthestStepIndex: number;
   ingredientStates: Record<string, "unchecked" | "have" | "missing">;
   timer: HousehelpTimer | null;
   online: boolean;

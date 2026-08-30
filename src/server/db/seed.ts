@@ -289,7 +289,9 @@ export function seedDemoData(client: Database.Database): void {
       null,
     );
 
-    client.prepare(
+    client.prepare("DELETE FROM spoken_guidance WHERE recipe_version_id = ?")
+      .run(DEMO_IDS.recipeVersion);
+    const guidanceStatement = client.prepare(
       `INSERT INTO spoken_guidance
         (id, recipe_version_id, guidance_key, step_id, interface_key, locale, speakable_text,
          content_hash, voice_version, review_status, audio_asset_id, cache_status,
@@ -306,23 +308,41 @@ export function seedDemoData(client: Database.Database): void {
          generation_status = excluded.generation_status,
          cache_key = excluded.cache_key,
          reviewed = excluded.reviewed`,
-    ).run(
-      DEMO_IDS.guidance,
-      DEMO_IDS.recipeVersion,
-      "cook.step_add",
-      DEMO_IDS.stepAdd,
-      null,
-      "en-IN",
-      "Now add half a cup of spinach.",
-      GUIDANCE_CONTENT_HASH,
-      "fixture-v1",
-      "reviewed",
-      "demo-audio-step-add",
-      "cached",
-      "ready",
-      `demo/en-IN/${GUIDANCE_CONTENT_HASH}/fixture-v1`,
-      1,
     );
+    const guidanceRows = [
+      ["recipe.dish", null, "en-IN", "Simple spinach"],
+      ["recipe.dish", null, "hi-IN", "सादा पालक"],
+      [`ingredient.${DEMO_IDS.ingredientSpinach}`, null, "en-IN", "half a cup of washed spinach"],
+      [`ingredient.${DEMO_IDS.ingredientSpinach}`, null, "hi-IN", "आधा कप धुला हुआ पालक"],
+      [`ingredient.${DEMO_IDS.ingredientOil}`, null, "en-IN", "one teaspoon of cooking oil"],
+      [`ingredient.${DEMO_IDS.ingredientOil}`, null, "hi-IN", "एक छोटा चम्मच खाना पकाने का तेल"],
+      [`cook.step.${DEMO_IDS.stepHeat}`, DEMO_IDS.stepHeat, "en-IN", "Heat one teaspoon of cooking oil over medium heat."],
+      [`cook.step.${DEMO_IDS.stepHeat}`, DEMO_IDS.stepHeat, "hi-IN", "मध्यम आँच पर एक छोटा चम्मच तेल गरम करें।"],
+      [`cook.step.${DEMO_IDS.stepAdd}`, DEMO_IDS.stepAdd, "en-IN", "Add half a cup of washed spinach and stir for two minutes."],
+      [`cook.step.${DEMO_IDS.stepAdd}`, DEMO_IDS.stepAdd, "hi-IN", "आधा कप धुला पालक डालें और दो मिनट चलाएँ।"],
+    ] as const;
+    for (const [guidanceKey, stepId, locale, speakableText] of guidanceRows) {
+      const identity = `${guidanceKey}:${locale}`;
+      const isCachedDemoGuidance = guidanceKey === `cook.step.${DEMO_IDS.stepAdd}` && locale === "en-IN";
+      const contentHash = isCachedDemoGuidance ? GUIDANCE_CONTENT_HASH : `demo-${identity}`;
+      guidanceStatement.run(
+        isCachedDemoGuidance ? DEMO_IDS.guidance : `demo-guidance-${identity.replaceAll(".", "-")}`,
+        DEMO_IDS.recipeVersion,
+        guidanceKey,
+        stepId,
+        null,
+        locale,
+        speakableText,
+        contentHash,
+        "fixture-v1",
+        "reviewed",
+        isCachedDemoGuidance ? "demo-audio-step-add" : null,
+        isCachedDemoGuidance ? "cached" : "not_cached",
+        "ready",
+        isCachedDemoGuidance ? `demo/en-IN/${contentHash}/fixture-v1` : null,
+        1,
+      );
+    }
 
     client.prepare(
       `INSERT INTO visual_assets
