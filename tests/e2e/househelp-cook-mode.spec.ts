@@ -295,8 +295,16 @@ test("househelp can start a published household recipe without an assignment", a
   const menuPayload = await menuResponse.json() as { recipes: Array<{ recipeVersionId: string }> };
   expect(menuPayload.recipes.map(({ recipeVersionId }) => recipeVersionId))
     .toContain("demo-recipe-v1");
+  await page.evaluate(() => {
+    (window as Window & { __HOUSEHELP_FAIL_SPEECH__?: boolean })
+      .__HOUSEHELP_FAIL_SPEECH__ = true;
+  });
   await page.getByRole("button", { name: "अभी बनाएँ" }).click();
   await expect(page).toHaveURL(/\/househelp\/(?!demo-assignment)[^/]+$/);
+  await page.evaluate(() => {
+    (window as Window & { __HOUSEHELP_FAIL_SPEECH__?: boolean })
+      .__HOUSEHELP_FAIL_SPEECH__ = false;
+  });
   await expect(page.locator("main")).toHaveAttribute("data-view", "today");
   await page.getByRole("button", { name: "शुरू करें" }).click();
   await page.getByRole("button", { name: "सामग्री जाँचें" }).click();

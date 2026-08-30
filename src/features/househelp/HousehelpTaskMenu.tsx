@@ -190,7 +190,7 @@ export function HousehelpTaskMenu({
         { locale, text: formatMessage(locale, "control.cook_now") },
         { locale, text: formatMessage(locale, "menu.open_recipe", { dish: translated.dish }) },
       ]);
-      if (outcome !== "completed") {
+      if (outcome === "dropped") {
         startingRecipeRef.current = false;
         setStartingRecipe(false);
         return;
