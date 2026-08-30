@@ -162,19 +162,31 @@ export function interpretImportApiPayload(
   responseOk = true,
 ): ImportApiInterpretation {
   const root = asRecord(payload);
+  const data = asRecord(root?.data);
   const job = asRecord(root?.job);
   const draft = asRecord(root?.draft);
-  const nestedResult = root?.result ?? job?.result;
-  const resultCandidate = asRecord(nestedResult) ?? root;
-  const failure = asRecord(resultCandidate?.failure) ?? asRecord(root?.failure);
+  const nestedResult = data?.result ?? root?.result ?? job?.result;
+  const resultCandidate = asRecord(nestedResult) ?? data ?? root;
+  const apiError = asRecord(root?.error);
+  const failure = asRecord(resultCandidate?.failure)
+    ?? asRecord(data?.failure)
+    ?? asRecord(root?.failure)
+    ?? apiError;
   const message = firstString(
     failure?.message,
+    apiError?.message,
     root?.message,
     root?.error,
+    data?.message,
     job?.message,
   );
 
-  if (!responseOk || resultCandidate?.status === "failure" || failure) {
+  if (
+    !responseOk
+    || data?.status === "failed"
+    || resultCandidate?.status === "failure"
+    || failure
+  ) {
     return {
       kind: "failure",
       message: message ?? "The recipe could not be imported. You can retry or enter it manually.",
@@ -183,6 +195,7 @@ export function interpretImportApiPayload(
   }
 
   const versionId = firstString(
+    data?.recipeVersionId,
     root?.recipeVersionId,
     root?.draftVersionId,
     job?.recipeVersionId,
@@ -192,7 +205,7 @@ export function interpretImportApiPayload(
   if (versionId) return { kind: "draft", versionId };
 
   const parsedResult = ImportedRecipeResultSchema.safeParse(resultCandidate);
-  const jobId = firstString(root?.jobId, root?.id, job?.id);
+  const jobId = firstString(data?.id, root?.jobId, root?.id, job?.id);
   if (parsedResult.success) {
     return { kind: "result", jobId, result: parsedResult.data };
   }
@@ -201,7 +214,14 @@ export function interpretImportApiPayload(
     return {
       kind: "pending",
       jobId,
-      stage: firstString(job?.stage, root?.stage, job?.status, root?.status) ?? "queued",
+      stage: firstString(
+        data?.stage,
+        job?.stage,
+        root?.stage,
+        data?.status,
+        job?.status,
+        root?.status,
+      ) ?? "queued",
     };
   }
 
