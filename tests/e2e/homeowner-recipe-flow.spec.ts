@@ -98,8 +98,11 @@ test("homeowner imports, reviews, publishes and assigns a recipe", async ({ page
   await expect(page.getByText("Original source line").first()).toBeVisible();
   await expect(page.getByText("500 g paneer", { exact: true }).first()).toBeVisible();
 
-  await page.getByLabel("Exact Hindi speech").nth(0).fill("पालक धोएँ।");
-  await page.getByLabel("Exact Hindi speech").nth(1).fill("पनीर डालें और पाँच मिनट पकाएँ।");
+  await page.getByLabel("Exact Hindi dish speech").fill("पालक पनीर");
+  await page.getByLabel("Exact Hindi speech").nth(0).fill("पाँच सौ ग्राम पनीर");
+  await page.getByLabel("Exact Hindi speech").nth(1).fill("दो कप पालक");
+  await page.getByLabel("Exact Hindi speech").nth(2).fill("पालक धोएँ।");
+  await page.getByLabel("Exact Hindi speech").nth(3).fill("पनीर डालें और पाँच मिनट पकाएँ।");
   await page.getByLabel(/I reviewed the ingredients/).check();
   await page.getByRole("button", { name: "Publish reviewed recipe" }).click();
 
@@ -111,12 +114,32 @@ test("homeowner imports, reviews, publishes and assigns a recipe", async ({ page
   await page.getByLabel("Optional target time").fill("19:30");
   await page.getByLabel("Servings").fill("3");
   await page.getByLabel("हिन्दी").check();
-  await page.getByLabel("Homeowner note").fill("Use less chilli");
+  await page.getByLabel("Exact English homeowner note").fill("Use less chilli");
+  await page.getByLabel("Exact Hindi homeowner note").fill("मिर्च कम डालें");
   await page.getByLabel(/If I added a note/).check();
+  const assignmentResponse = page.waitForResponse((response) =>
+    response.url().endsWith("/api/homeowner/assignments") && response.request().method() === "POST",
+  );
   await page.getByRole("button", { name: "Assign recipe" }).click();
+  const assignmentPayload = await (await assignmentResponse).json() as { id: string };
 
   await expect(page.getByRole("heading", { name: "Palak paneer is on the household plan" })).toBeVisible();
   await expect(page.getByText("selected spoken guidance is reviewed and ready")).toBeVisible();
+
+  await page.getByRole("link", { name: "Return to Today" }).click();
+  await page.getByRole("button", { name: "Exit demo" }).click();
+  await page.getByRole("button", { name: "Enter househelp shell" }).click();
+  const handoff = await page.request.get(`/api/househelp/assignments/${assignmentPayload.id}`);
+  expect(handoff.ok()).toBeTruthy();
+  await expect(handoff.json()).resolves.toMatchObject({
+    snapshot: {
+      assignment: { id: assignmentPayload.id, recipeVersionId: expect.any(String) },
+      translations: {
+        "en-IN": { dish: "Palak paneer", note: "Use less chilli" },
+        "hi-IN": { dish: "पालक पनीर", note: "मिर्च कम डालें" },
+      },
+    },
+  });
 });
 
 test("import API failure keeps manual entry available", async ({ page }) => {

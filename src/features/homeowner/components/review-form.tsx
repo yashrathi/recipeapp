@@ -34,6 +34,8 @@ async function responseMessage(response: Response): Promise<string> {
 export function ReviewForm({ recipe }: { recipe: HomeownerRecipeView }) {
   const router = useRouter();
   const [title, setTitle] = useState(recipe.title);
+  const [spokenDishEnglish, setSpokenDishEnglish] = useState(recipe.spokenDishEnglish);
+  const [spokenDishHindi, setSpokenDishHindi] = useState(recipe.spokenDishHindi);
   const [servings, setServings] = useState(recipe.servings?.toString() ?? "");
   const [ingredients, setIngredients] = useState<IngredientState[]>(recipe.ingredients);
   const [steps, setSteps] = useState<StepState[]>(recipe.steps);
@@ -54,6 +56,8 @@ export function ReviewForm({ recipe }: { recipe: HomeownerRecipeView }) {
     return {
       title,
       servings: servings ? Number(servings) : null,
+      spokenDishEnglish,
+      spokenDishHindi,
       reviewConfirmed: confirmed,
       ingredients: ingredients.map((ingredient) => ({
         id: ingredient.id,
@@ -62,6 +66,8 @@ export function ReviewForm({ recipe }: { recipe: HomeownerRecipeView }) {
         ingredientText: ingredient.ingredientText,
         quantityText: ingredient.quantityText || null,
         unit: ingredient.unit || null,
+        spokenEnglish: ingredient.spokenEnglish,
+        spokenHindi: ingredient.spokenHindi,
       })),
       steps: steps.map((step) => ({
         id: step.id,
@@ -114,6 +120,12 @@ export function ReviewForm({ recipe }: { recipe: HomeownerRecipeView }) {
   }
 
   const hasCoreLists = ingredients.length > 0 && steps.length > 0;
+  const hasBilingualGuidance = Boolean(
+    spokenDishEnglish.trim()
+    && spokenDishHindi.trim()
+    && ingredients.every((ingredient) => ingredient.spokenEnglish.trim() && ingredient.spokenHindi.trim())
+    && steps.every((step) => step.spokenEnglish.trim() && step.spokenHindi.trim()),
+  );
 
   return (
     <form className={styles.reviewForm} onSubmit={submit}>
@@ -133,6 +145,22 @@ export function ReviewForm({ recipe }: { recipe: HomeownerRecipeView }) {
           <div className={styles.fieldGroup}>
             <label htmlFor="review-servings">Servings</label>
             <input id="review-servings" value={servings} onChange={(event) => setServings(event.target.value)} type="number" min="0.5" step="0.5" />
+          </div>
+        </div>
+        <div className={styles.spokenGrid}>
+          <div className={styles.spokenCard}>
+            <div className={styles.spokenHeader}>
+              <label htmlFor="dish-english">Exact English dish speech</label>
+              <button className={styles.previewButton} type="button" onClick={() => speakPreview(spokenDishEnglish, "en-IN")} disabled={!spokenDishEnglish.trim()}>Hear English</button>
+            </div>
+            <input id="dish-english" value={spokenDishEnglish} onChange={(event) => setSpokenDishEnglish(event.target.value)} required />
+          </div>
+          <div className={styles.spokenCard}>
+            <div className={styles.spokenHeader}>
+              <label htmlFor="dish-hindi">Exact Hindi dish speech</label>
+              <button className={styles.previewButton} type="button" onClick={() => speakPreview(spokenDishHindi, "hi-IN")} disabled={!spokenDishHindi.trim()}>Hear Hindi</button>
+            </div>
+            <input id="dish-hindi" lang="hi" value={spokenDishHindi} onChange={(event) => setSpokenDishHindi(event.target.value)} placeholder="Reviewed Hindi dish name" required />
           </div>
         </div>
       </section>
@@ -155,6 +183,8 @@ export function ReviewForm({ recipe }: { recipe: HomeownerRecipeView }) {
               unit: null,
               confidence: 1,
               evidence: [],
+              spokenEnglish: "",
+              spokenHindi: "",
             }])}
           >
             Add ingredient
@@ -190,6 +220,22 @@ export function ReviewForm({ recipe }: { recipe: HomeownerRecipeView }) {
                     <option value="">No unit</option>
                     {unitOptions.map((unit) => <option value={unit} key={unit}>{unit}</option>)}
                   </select>
+                </div>
+              </div>
+              <div className={styles.spokenGrid}>
+                <div className={styles.spokenCard}>
+                  <div className={styles.spokenHeader}>
+                    <label htmlFor={`ingredient-english-${index}`}>Exact English speech</label>
+                    <button className={styles.previewButton} type="button" onClick={() => speakPreview(ingredient.spokenEnglish, "en-IN")} disabled={!ingredient.spokenEnglish.trim()}>Hear English</button>
+                  </div>
+                  <textarea id={`ingredient-english-${index}`} value={ingredient.spokenEnglish} onChange={(event) => changeIngredient(index, { spokenEnglish: event.target.value })} rows={2} required />
+                </div>
+                <div className={styles.spokenCard}>
+                  <div className={styles.spokenHeader}>
+                    <label htmlFor={`ingredient-hindi-${index}`}>Exact Hindi speech</label>
+                    <button className={styles.previewButton} type="button" onClick={() => speakPreview(ingredient.spokenHindi, "hi-IN")} disabled={!ingredient.spokenHindi.trim()}>Hear Hindi</button>
+                  </div>
+                  <textarea id={`ingredient-hindi-${index}`} lang="hi" value={ingredient.spokenHindi} onChange={(event) => changeIngredient(index, { spokenHindi: event.target.value })} rows={2} placeholder="Reviewed Hindi ingredient wording" required />
                 </div>
               </div>
               <div className={styles.editorMeta}>
@@ -297,11 +343,12 @@ export function ReviewForm({ recipe }: { recipe: HomeownerRecipeView }) {
           <span>I reviewed the ingredients, steps, exact spoken guidance, source evidence, and visual fallbacks.</span>
         </label>
         {!hasCoreLists ? <p className={styles.gateMessage}>Publishing is blocked until both core lists contain at least one item.</p> : null}
+        {hasCoreLists && !hasBilingualGuidance ? <p className={styles.gateMessage}>Publishing is blocked until exact English and Hindi speech is reviewed for the dish, every ingredient, and every step.</p> : null}
         {error ? <p className={styles.errorText} role="alert">{error}</p> : null}
         {message ? <p className={styles.successText} role="status">{message}</p> : null}
         <div className={styles.inlineActions}>
           <button className={styles.secondaryButton} type="submit" disabled={busy !== null}>{busy === "save" ? "Saving…" : "Save draft"}</button>
-          <button className={styles.primaryButton} type="button" onClick={() => void save(true)} disabled={busy !== null || !hasCoreLists || !confirmed}>{busy === "publish" ? "Publishing…" : "Publish reviewed recipe"}</button>
+          <button className={styles.primaryButton} type="button" onClick={() => void save(true)} disabled={busy !== null || !hasCoreLists || !hasBilingualGuidance || !confirmed}>{busy === "publish" ? "Publishing…" : "Publish reviewed recipe"}</button>
         </div>
       </section>
     </form>

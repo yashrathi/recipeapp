@@ -7,6 +7,7 @@ import { createDatabaseHandle } from "@/server/db/client";
 import { runMigrations } from "@/server/db/migrate";
 import { DEMO_IDS, seedDemoData } from "@/server/db/seed";
 import { HomeownerStore } from "@/features/homeowner/server/store";
+import { HousehelpRepository } from "@/features/househelp/server/repository";
 
 const HASH = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const homeowner: HouseholdActor = {
@@ -123,12 +124,39 @@ describe("homeowner recipe service", () => {
     await expect(store.publishDraft(homeowner, versionId, false)).rejects.toMatchObject({ code: "REVIEW_CONFIRMATION_REQUIRED" });
   });
 
+  it("blocks publication until all bilingual speech is reviewed", async () => {
+    const versionId = await store.createManualDraft(homeowner, {
+      title: "Confirmed rice",
+      servings: 2,
+      ingredients: ["1 cup rice"],
+      steps: ["Cook the rice"],
+    });
+    const draft = await store.getRecipe(homeowner, versionId);
+    await store.updateDraft(homeowner, versionId, {
+      title: draft.title,
+      servings: draft.servings,
+      spokenDishEnglish: draft.title,
+      spokenDishHindi: "",
+      reviewConfirmed: true,
+      ingredients: draft.ingredients.map((ingredient) => ({
+        ...ingredient,
+        unit: ingredient.unit as "cup" | null,
+      })),
+      steps: draft.steps,
+    });
+    await expect(store.publishDraft(homeowner, versionId, true)).rejects.toMatchObject({
+      code: "BILINGUAL_GUIDANCE_REQUIRED",
+    });
+  });
+
   it("publishes a corrected partial draft and assigns the immutable version", async () => {
     const versionId = await store.createImportedDraft(homeowner, { result: partialImport });
     const draft = await store.getRecipe(homeowner, versionId);
     await store.updateDraft(homeowner, versionId, {
       title: draft.title,
       servings: draft.servings,
+      spokenDishEnglish: "spinach",
+      spokenDishHindi: "पालक",
       reviewConfirmed: true,
       ingredients: draft.ingredients.map((ingredient) => ({
         id: ingredient.id,
@@ -137,6 +165,8 @@ describe("homeowner recipe service", () => {
         ingredientText: ingredient.ingredientText,
         quantityText: ingredient.quantityText,
         unit: ingredient.unit as "cup",
+        spokenEnglish: "one cup of spinach",
+        spokenHindi: "एक कप पालक",
       })),
       steps: [{
         id: "homeowner-step-1",
@@ -158,10 +188,24 @@ describe("homeowner recipe service", () => {
       targetTime: "19:30",
       targetServings: 3,
       selectedLocale: "hi-IN",
-      notes: "Use less chilli",
+      notesEnglish: "Use less chilli",
+      notesHindi: "मिर्च कम डालें",
       noteReviewConfirmed: true,
     });
     expect(assignment.guidanceReady).toBe(true);
     expect(client.prepare("SELECT selected_locale, target_servings FROM cooking_assignments WHERE id = ?").get(assignment.id)).toMatchObject({ selected_locale: "hi-IN", target_servings: 3 });
+    expect(client.prepare(
+      "SELECT COUNT(*) AS count FROM househelp_assignment_snapshots WHERE assignment_id = ?",
+    ).get(assignment.id)).toEqual({ count: 2 });
+    const househelpView = new HousehelpRepository(client).getVisible(househelp, assignment.id);
+    expect(househelpView?.snapshot).toMatchObject({
+      assignment: { id: assignment.id, recipeVersionId: versionId },
+      translations: {
+        "en-IN": { dish: "spinach", note: "Use less chilli" },
+        "hi-IN": { dish: "पालक", note: "मिर्च कम डालें" },
+      },
+    });
+    expect(househelpView?.snapshot.translations["hi-IN"].ingredients[draft.ingredients[0]!.id]
+      ?.quantitySpeech).toBe("एक कप पालक");
   });
 });

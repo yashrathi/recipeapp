@@ -26,6 +26,7 @@ function eligible(snapshot: AssignmentSnapshot, assetId: string | null) {
 function bundledPath(assetId: string): string | null {
   const paths: Record<string, string> = {
     "state-ingredient-bundled": "/househelp/state-ingredient.svg",
+    "state-dish-bundled": "/househelp/state-dish.svg",
     "icon-wash-bundled": "/househelp/action-wash.svg",
     "icon-stir-bundled": "/househelp/action-stir.svg",
     "icon-serve-bundled": "/househelp/action-serve.svg",

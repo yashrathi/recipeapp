@@ -37,7 +37,8 @@ export function AssignmentForm({
           targetTime: formData.get("targetTime") || null,
           targetServings: Number(formData.get("targetServings")),
           selectedLocale: formData.get("selectedLocale"),
-          notes: formData.get("notes") || null,
+          notesEnglish: formData.get("notesEnglish") || null,
+          notesHindi: formData.get("notesHindi") || null,
           noteReviewConfirmed: formData.get("noteReviewConfirmed") === "on",
         }),
       });
@@ -105,14 +106,20 @@ export function AssignmentForm({
         <label><input type="radio" name="selectedLocale" value="hi-IN" /> हिन्दी</label>
         <p>The househelp confirms the language by hearing a sample on their device.</p>
       </fieldset>
-      <div className={styles.fieldGroup}>
-        <label htmlFor="assignment-note">Homeowner note</label>
-        <textarea id="assignment-note" name="notes" rows={3} maxLength={1000} placeholder="For example: use less chilli" />
-        <p className={styles.fieldHint}>Only add a note that has reviewed spoken wording in the selected language.</p>
+      <div className={styles.spokenGrid}>
+        <div className={styles.fieldGroup}>
+          <label htmlFor="assignment-note-english">Exact English homeowner note</label>
+          <textarea id="assignment-note-english" name="notesEnglish" rows={3} maxLength={1000} placeholder="For example: use less chilli" />
+        </div>
+        <div className={styles.fieldGroup}>
+          <label htmlFor="assignment-note-hindi">Exact Hindi homeowner note</label>
+          <textarea id="assignment-note-hindi" name="notesHindi" lang="hi" rows={3} maxLength={1000} placeholder="उदाहरण: मिर्च कम डालें" />
+        </div>
+        <p className={styles.fieldHint}>Add both reviewed versions so switching language never changes the note’s meaning, or leave both blank.</p>
       </div>
       <label className={styles.checkRow}>
         <input type="checkbox" name="noteReviewConfirmed" />
-        <span>If I added a note, I reviewed its exact wording in the selected spoken language.</span>
+        <span>If I added a note, I reviewed its exact English and Hindi wording.</span>
       </label>
       {error ? <p className={styles.errorText} role="alert">{error}</p> : null}
       <button className={styles.primaryButton} type="submit" disabled={busy || househelp.length === 0}>

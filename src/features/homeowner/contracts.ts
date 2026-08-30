@@ -43,6 +43,8 @@ export const IngredientEditSchema = z.object({
     "pinch",
     "bunch",
   ]).nullable(),
+  spokenEnglish: z.string().trim().min(1).max(2000),
+  spokenHindi: z.string().trim().max(2000),
 });
 export type IngredientEdit = z.infer<typeof IngredientEditSchema>;
 
@@ -59,6 +61,8 @@ export type StepEdit = z.infer<typeof StepEditSchema>;
 export const DraftEditInputSchema = z.object({
   title: z.string().trim().min(1, "Enter a recipe title.").max(300),
   servings: nullableNumberFromInput,
+  spokenDishEnglish: z.string().trim().min(1).max(1000),
+  spokenDishHindi: z.string().trim().max(1000),
   ingredients: z.array(IngredientEditSchema).max(500),
   steps: z.array(StepEditSchema).max(500),
   reviewConfirmed: z.boolean(),
@@ -73,7 +77,8 @@ export const AssignmentInputSchema = z.object({
   targetTime: z.union([z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), z.literal("")]).nullable(),
   targetServings: z.number().positive(),
   selectedLocale: MilestoneOneSpokenLocaleSchema,
-  notes: z.string().trim().max(1000).nullable(),
+  notesEnglish: z.string().trim().max(1000).nullable(),
+  notesHindi: z.string().trim().max(1000).nullable(),
   noteReviewConfirmed: z.boolean(),
 });
 export type AssignmentInput = z.infer<typeof AssignmentInputSchema>;
