@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 const HASH = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const LONG_SHORT_ACTION = `Keep stirring the masala gently until the oil separates and the onions are deeply browned. ${"Continue stirring carefully. ".repeat(10)}`.trim();
+const LONG_ASSIGNMENT_NOTE = `Please follow this household note exactly. ${"Keep this instruction in the assigned snapshot. ".repeat(30)}`.trim();
+const LONG_HINDI_ASSIGNMENT_NOTE = `कृपया घर का यह निर्देश ठीक से मानें। ${"यह पूरा निर्देश काम में सुरक्षित रखें। ".repeat(35)}`.trim();
 
 const importedRecipe = {
   contractVersion: "web-recipe-import/v1",
@@ -109,6 +112,10 @@ test("homeowner imports, reviews, publishes and assigns a recipe", async ({ page
   await page.getByLabel("Hindi speech (optional override)").nth(1).fill("दो कप पालक");
   await page.getByLabel("Hindi speech (optional override)").nth(2).fill("पालक धोएँ।");
   await page.getByLabel("Hindi speech (optional override)").nth(3).fill("पनीर डालें और पाँच मिनट पकाएँ।");
+  const firstShortAction = page.getByLabel("Short action").first();
+  expect(await firstShortAction.getAttribute("maxlength")).toBeNull();
+  await firstShortAction.fill(LONG_SHORT_ACTION);
+  await expect(firstShortAction).toHaveValue(LONG_SHORT_ACTION);
   await page.getByLabel(/I reviewed the ingredients/).check();
   await page.getByRole("button", { name: "Publish reviewed recipe" }).click();
 
@@ -120,8 +127,8 @@ test("homeowner imports, reviews, publishes and assigns a recipe", async ({ page
   await page.getByLabel("Optional target time").fill("19:30");
   await page.getByLabel("Servings").fill("3");
   await page.getByLabel("हिन्दी").check();
-  await page.getByLabel("Exact English homeowner note").fill("Use less chilli");
-  await page.getByLabel("Hindi homeowner note (optional override)").fill("मिर्च कम डालें");
+  await page.getByLabel("Exact English homeowner note").fill(LONG_ASSIGNMENT_NOTE);
+  await page.getByLabel("Hindi homeowner note (optional override)").fill(LONG_HINDI_ASSIGNMENT_NOTE);
   await page.getByLabel(/If I added a note/).check();
   const assignmentResponse = page.waitForResponse((response) =>
     response.url().endsWith("/api/homeowner/assignments") && response.request().method() === "POST",
@@ -141,8 +148,8 @@ test("homeowner imports, reviews, publishes and assigns a recipe", async ({ page
     snapshot: {
       assignment: { id: assignmentPayload.id, recipeVersionId: expect.any(String) },
       translations: {
-        "en-IN": { dish: "Palak paneer", note: "Use less chilli" },
-        "hi-IN": { dish: "पालक पनीर", note: "मिर्च कम डालें" },
+        "en-IN": { dish: "Palak paneer", note: LONG_ASSIGNMENT_NOTE },
+        "hi-IN": { dish: "पालक पनीर", note: LONG_HINDI_ASSIGNMENT_NOTE },
       },
     },
   });

@@ -14,18 +14,18 @@ const nullableNumberFromInput = z.preprocess(
 );
 
 export const ManualRecipeInputSchema = z.object({
-  title: z.string().trim().min(1, "Enter a recipe title.").max(300),
+  title: z.string().trim().min(1, "Enter a recipe title."),
   servings: nullableNumberFromInput,
-  ingredients: z.array(z.string().trim().min(1).max(1000)).min(1, "Add at least one ingredient."),
-  steps: z.array(z.string().trim().min(1).max(5000)).min(1, "Add at least one cooking step."),
+  ingredients: z.array(z.string().trim().min(1)).min(1, "Add at least one ingredient."),
+  steps: z.array(z.string().trim().min(1)).min(1, "Add at least one cooking step."),
 });
 export type ManualRecipeInput = z.infer<typeof ManualRecipeInputSchema>;
 
 export const IngredientEditSchema = z.object({
   id: z.string().trim().min(1).max(128).optional(),
-  originalText: z.string().max(1000).optional(),
-  displayLine: z.string().trim().min(1).max(1000),
-  ingredientText: z.string().trim().min(1).max(1000),
+  originalText: z.string().optional(),
+  displayLine: z.string().trim().min(1),
+  ingredientText: z.string().trim().min(1),
   quantityText: z.string().trim().max(100).nullable(),
   unit: z.enum([
     "teaspoon",
@@ -43,26 +43,26 @@ export const IngredientEditSchema = z.object({
     "pinch",
     "bunch",
   ]).nullable(),
-  spokenEnglish: z.string().trim().min(1).max(2000),
-  spokenHindi: z.string().trim().max(2000),
+  spokenEnglish: z.string().trim().min(1),
+  spokenHindi: z.string().trim(),
 });
 export type IngredientEdit = z.infer<typeof IngredientEditSchema>;
 
 export const StepEditSchema = z.object({
   id: z.string().trim().min(1).max(128).optional(),
-  originalText: z.string().max(5000).optional(),
-  shortText: z.string().trim().min(1).max(280),
-  detailedText: z.string().trim().min(1).max(2000),
-  spokenEnglish: z.string().trim().min(1).max(2000),
-  spokenHindi: z.string().trim().max(2000),
+  originalText: z.string().optional(),
+  shortText: z.string().trim().min(1),
+  detailedText: z.string().trim().min(1),
+  spokenEnglish: z.string().trim().min(1),
+  spokenHindi: z.string().trim(),
 });
 export type StepEdit = z.infer<typeof StepEditSchema>;
 
 export const DraftEditInputSchema = z.object({
-  title: z.string().trim().min(1, "Enter a recipe title.").max(300),
+  title: z.string().trim().min(1, "Enter a recipe title."),
   servings: nullableNumberFromInput,
-  spokenDishEnglish: z.string().trim().min(1).max(1000),
-  spokenDishHindi: z.string().trim().max(1000),
+  spokenDishEnglish: z.string().trim().min(1),
+  spokenDishHindi: z.string().trim(),
   ingredients: z.array(IngredientEditSchema).max(500),
   steps: z.array(StepEditSchema).max(500),
   reviewConfirmed: z.boolean(),
@@ -77,8 +77,8 @@ export const AssignmentInputSchema = z.object({
   targetTime: z.union([z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), z.literal("")]).nullable(),
   targetServings: z.number().positive(),
   selectedLocale: MilestoneOneSpokenLocaleSchema,
-  notesEnglish: z.string().trim().max(1000).nullable(),
-  notesHindi: z.string().trim().max(1000).nullable(),
+  notesEnglish: z.string().trim().nullable(),
+  notesHindi: z.string().trim().nullable(),
   noteReviewConfirmed: z.boolean(),
 });
 export type AssignmentInput = z.infer<typeof AssignmentInputSchema>;

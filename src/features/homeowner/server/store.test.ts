@@ -169,6 +169,62 @@ describe("homeowner recipe service", () => {
     });
   });
 
+  it("saves and publishes homeowner recipe guidance longer than the former field limits", async () => {
+    const longAction = `Keep stirring the masala gently until the oil separates and the onions are deeply browned. ${"Continue stirring carefully. ".repeat(10)}`.trim();
+    const longIngredientGuidance = `Add the prepared ingredient slowly while keeping the pan over low heat. ${"Explain this ingredient clearly. ".repeat(70)}`.trim();
+    const versionId = await store.createManualDraft(homeowner, {
+      title: "Long family instructions",
+      servings: 4,
+      ingredients: ["1 bowl prepared masala"],
+      steps: ["Cook the prepared masala"],
+    });
+    const draft = await store.getRecipe(homeowner, versionId);
+
+    await store.updateDraft(homeowner, versionId, {
+      title: draft.title,
+      servings: draft.servings,
+      spokenDishEnglish: draft.title,
+      spokenDishHindi: "लंबे पारिवारिक निर्देश",
+      reviewConfirmed: true,
+      ingredients: draft.ingredients.map((ingredient) => ({
+        ...ingredient,
+        unit: ingredient.unit as "cup" | null,
+        spokenEnglish: longIngredientGuidance,
+        spokenHindi: longIngredientGuidance,
+      })),
+      steps: draft.steps.map((step) => ({
+        ...step,
+        shortText: longAction,
+        detailedText: longAction,
+        spokenEnglish: longAction,
+        spokenHindi: longAction,
+      })),
+    });
+    await store.publishDraft(homeowner, versionId, true);
+
+    await expect(store.getRecipe(homeowner, versionId)).resolves.toMatchObject({
+      reviewStatus: "published",
+      ingredients: [{ spokenEnglish: longIngredientGuidance }],
+      steps: [{ shortText: longAction }],
+    });
+
+    const longAssignmentNote = `Please follow this household note exactly. ${"Keep this instruction in the assigned snapshot. ".repeat(30)}`.trim();
+    const assignment = await store.createAssignment(homeowner, {
+      recipeVersionId: versionId,
+      assigneeId: DEMO_IDS.househelp,
+      scheduledDate: "2026-09-01",
+      mealSlot: "dinner",
+      targetTime: "19:30",
+      targetServings: 4,
+      selectedLocale: "en-IN",
+      notesEnglish: longAssignmentNote,
+      notesHindi: longAssignmentNote,
+      noteReviewConfirmed: true,
+    });
+    const househelpView = new HousehelpRepository(client).getVisible(househelp, assignment.id);
+    expect(househelpView?.snapshot.translations["en-IN"].note).toBe(longAssignmentNote);
+  });
+
   it("publishes a corrected partial draft and assigns the immutable version", async () => {
     const versionId = await store.createImportedDraft(homeowner, { result: partialImport });
     const draft = await store.getRecipe(homeowner, versionId);

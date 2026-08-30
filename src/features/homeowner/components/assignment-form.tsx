@@ -109,11 +109,11 @@ export function AssignmentForm({
       <div className={styles.spokenGrid}>
         <div className={styles.fieldGroup}>
           <label htmlFor="assignment-note-english">Exact English homeowner note</label>
-          <textarea id="assignment-note-english" name="notesEnglish" rows={3} maxLength={1000} placeholder="For example: use less chilli" />
+          <textarea id="assignment-note-english" name="notesEnglish" rows={3} placeholder="For example: use less chilli" />
         </div>
         <div className={styles.fieldGroup}>
           <label htmlFor="assignment-note-hindi">Hindi homeowner note (optional override)</label>
-          <textarea id="assignment-note-hindi" name="notesHindi" lang="hi" rows={3} maxLength={1000} placeholder="Generated automatically from the English note" />
+          <textarea id="assignment-note-hindi" name="notesHindi" lang="hi" rows={3} placeholder="Generated automatically from the English note" />
         </div>
         <p className={styles.fieldHint}>Write the note in English. The app generates Hindi automatically unless you add an optional Hindi override.</p>
       </div>

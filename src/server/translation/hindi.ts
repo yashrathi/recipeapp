@@ -13,7 +13,6 @@ type FetchTransport = (input: string | URL | Request, init?: RequestInit) => Pro
 export interface HindiTranslationItem {
   key: string;
   english: string;
-  maxLength: number;
 }
 
 export interface HindiTranslation {
@@ -212,9 +211,9 @@ export class OpenAIHindiTranslator implements HindiTranslator {
       if (
         invalidEntry
         || byKey.size !== items.length
-        || verified.some((item, index) => !item.hindi || item.hindi.length > items[index]!.maxLength)
+        || verified.some((item) => !item.hindi)
       ) {
-        throw new HindiTranslationError("The Hindi translation response was incomplete or too long.");
+        throw new HindiTranslationError("The Hindi translation response was incomplete.");
       }
       return verified;
     } catch (error) {

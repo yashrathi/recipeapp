@@ -371,7 +371,7 @@ export class HomeownerStore {
           spokenHindi: "",
         })),
         parsed.steps.map((text) => ({
-          shortText: text.slice(0, 280),
+          shortText: text,
           detailedText: text,
           spokenEnglish: text,
           spokenHindi: "",
@@ -469,7 +469,7 @@ export class HomeownerStore {
         })),
         result.recipe.steps.map((step) => ({
           originalText: step.originalText,
-          shortText: step.displayText.slice(0, 280),
+          shortText: step.displayText,
           detailedText: step.displayText,
           spokenEnglish: step.displayText,
           spokenHindi: "",
@@ -687,7 +687,6 @@ export class HomeownerStore {
     const translations = await this.translateToHindi(missing.map((row) => ({
       key: row.guidanceKey,
       english: row.english,
-      maxLength: row.guidanceKey === "recipe.dish" ? 1_000 : 2_000,
     })));
     this.client.transaction(() => {
       for (const row of missing) {
@@ -1173,7 +1172,6 @@ export class HomeownerStore {
       const translations = await this.translateToHindi([{
         key: "assignment.note",
         english: parsed.notesEnglish,
-        maxLength: 1_000,
       }]);
       notesHindi = translations.get("assignment.note") ?? "";
       if (!notesHindi) {
