@@ -3,13 +3,17 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { ImportPipelineError, sha256 } from "@/domain/import/types";
 import { createSessionToken, SESSION_COOKIE_NAME } from "@/server/auth/session";
 import { createDatabaseHandle } from "@/server/db/client";
 import { runMigrations } from "@/server/db/migrate";
 import { DEMO_IDS, seedDemoData } from "@/server/db/seed";
 import { SafePageFetcher, type HttpTransport } from "@/server/import/fetch";
 import { createImportHttpHandlers } from "@/server/import/http";
-import { WebRecipeImportPipeline } from "@/server/import/pipeline";
+import {
+  WebRecipeImportPipeline,
+  type RecipePageFetcher,
+} from "@/server/import/pipeline";
 import { ImportRepository } from "@/server/import/repository";
 import { ImportService } from "@/server/import/service";
 
@@ -141,6 +145,107 @@ describe("import API authorization, persistence and idempotency", () => {
     expect(
       (client.prepare("SELECT COUNT(*) AS count FROM recipes WHERE source_id != ?").get(DEMO_IDS.source) as { count: number }).count,
     ).toBe(1);
+  });
+
+  it("persists Firecrawl as the retrieval provider after a safe direct-fetch failure", async () => {
+    const direct: RecipePageFetcher = {
+      async fetch() {
+        throw new ImportPipelineError("FETCH_CLIENT_ERROR", "fetch", false);
+      },
+    };
+    const fallback: RecipePageFetcher = {
+      async fetch(requestedUrl) {
+        return {
+          requestedUrl,
+          finalUrl: requestedUrl,
+          redirectCount: 0,
+          responseMediaType: "text/html",
+          fetchedAt: "2026-08-30T10:00:00.000Z",
+          contentSha256: sha256(fixtureBody),
+          html: fixtureBody.toString("utf8"),
+          charsetReplacement: false,
+          attemptCount: 1,
+        };
+      },
+    };
+    const fallbackHandlers = createImportHttpHandlers(
+      client,
+      new ImportService(
+        new ImportRepository(client),
+        new WebRecipeImportPipeline(direct, fallback),
+      ),
+    );
+
+    const response = await fallbackHandlers.post(
+      postRequest(homeownerCookie, SOURCE_URL, "firecrawl-persistence"),
+    );
+    const body = (await response.json()) as {
+      data: { result: { source: { retrievalProvider?: string } } };
+    };
+
+    expect(response.status).toBe(201);
+    expect(body.data.result.source.retrievalProvider).toBe("firecrawl");
+    const stored = client
+      .prepare("SELECT result_json FROM import_jobs WHERE idempotency_key = ?")
+      .get("firecrawl-persistence") as { result_json: string };
+    expect(JSON.parse(stored.result_json)).toMatchObject({
+      source: { retrievalProvider: "firecrawl" },
+    });
+  });
+
+  it("persists invalid-URL failures as valid canonical JSON with the direct provider", async () => {
+    const response = await handlers.post(
+      postRequest(homeownerCookie, "not a url", "invalid-url-persistence"),
+    );
+    const body = (await response.json()) as {
+      data: { result: { failure: { code: string }; source: { retrievalProvider: string } } };
+    };
+
+    expect(body.data.result).toMatchObject({
+      failure: { code: "URL_INVALID" },
+      source: { retrievalProvider: "direct" },
+    });
+    const stored = client
+      .prepare("SELECT result_json FROM import_jobs WHERE idempotency_key = ?")
+      .get("invalid-url-persistence") as { result_json: string };
+    expect(JSON.parse(stored.result_json)).toMatchObject({
+      failure: { code: "URL_INVALID" },
+      source: { retrievalProvider: "direct" },
+    });
+  });
+
+  it("persists direct-fetch failures as valid canonical JSON without provider fallback", async () => {
+    const direct: RecipePageFetcher = {
+      async fetch() {
+        throw new ImportPipelineError("FETCH_UPSTREAM_ERROR", "fetch", true);
+      },
+    };
+    const directFailureHandlers = createImportHttpHandlers(
+      client,
+      new ImportService(
+        new ImportRepository(client),
+        new WebRecipeImportPipeline(direct, null),
+      ),
+    );
+
+    const response = await directFailureHandlers.post(
+      postRequest(homeownerCookie, SOURCE_URL, "direct-failure-persistence"),
+    );
+    const body = (await response.json()) as {
+      data: { result: { failure: { code: string }; source: { retrievalProvider: string } } };
+    };
+
+    expect(body.data.result).toMatchObject({
+      failure: { code: "FETCH_UPSTREAM_ERROR" },
+      source: { retrievalProvider: "direct" },
+    });
+    const stored = client
+      .prepare("SELECT result_json FROM import_jobs WHERE idempotency_key = ?")
+      .get("direct-failure-persistence") as { result_json: string };
+    expect(JSON.parse(stored.result_json)).toMatchObject({
+      failure: { code: "FETCH_UPSTREAM_ERROR" },
+      source: { retrievalProvider: "direct" },
+    });
   });
 
   it("returns a stable conflict envelope when a key is reused for another URL", async () => {

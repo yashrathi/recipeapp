@@ -125,6 +125,7 @@ export const ImportedRecipeResultSchema = z.object({
     author: ImportedTextFieldSchema.nullable().optional(),
     publisher: ImportedTextFieldSchema.nullable().optional(),
     method: z.enum(["json_ld", "microdata"]),
+    retrievalProvider: z.enum(["direct", "firecrawl"]).optional(),
   }).passthrough(),
   recipe: z.object({
     title: ImportedTextFieldSchema,

@@ -34,6 +34,13 @@ export type ImportFailureCode =
   | "CONTENT_ENCODING_UNSUPPORTED"
   | "CHARSET_UNSUPPORTED"
   | "UNSUPPORTED_RECIPE_PAGE"
+  | "FIRECRAWL_NOT_CONFIGURED"
+  | "FIRECRAWL_AUTH_FAILED"
+  | "FIRECRAWL_RATE_LIMITED"
+  | "FIRECRAWL_UNAVAILABLE"
+  | "FIRECRAWL_UNSUPPORTED_SOURCE"
+  | "FIRECRAWL_RESPONSE_INVALID"
+  | "FIRECRAWL_CONTENT_TOO_LARGE"
   | "IDEMPOTENCY_CONFLICT"
   | "IMPORT_INTERNAL_ERROR";
 
@@ -59,6 +66,13 @@ const failureMessages: Record<ImportFailureCode, string> = {
   CONTENT_ENCODING_UNSUPPORTED: "The source used an unsupported content encoding.",
   CHARSET_UNSUPPORTED: "The source used an unsupported text encoding.",
   UNSUPPORTED_RECIPE_PAGE: "This page does not contain supported structured recipe data.",
+  FIRECRAWL_NOT_CONFIGURED: "Automatic fallback is not configured for this source. Enter the recipe manually.",
+  FIRECRAWL_AUTH_FAILED: "Automatic fallback is temporarily unavailable. Enter the recipe manually or try again later.",
+  FIRECRAWL_RATE_LIMITED: "Automatic fallback is busy. Try again later or enter the recipe manually.",
+  FIRECRAWL_UNAVAILABLE: "Automatic fallback could not read this source. Try again later or enter the recipe manually.",
+  FIRECRAWL_UNSUPPORTED_SOURCE: "This source does not permit automatic import. Enter the recipe manually.",
+  FIRECRAWL_RESPONSE_INVALID: "Automatic fallback returned no usable recipe page. Enter the recipe manually.",
+  FIRECRAWL_CONTENT_TOO_LARGE: "The fallback recipe page exceeded the import size limit. Enter the recipe manually.",
   IDEMPOTENCY_CONFLICT: "This import request key was already used for a different link.",
   IMPORT_INTERNAL_ERROR: "The recipe could not be imported because of an internal error.",
 };
@@ -273,6 +287,7 @@ export interface ImportSource {
   publisher: TextField | null;
   imageUrl: string | null;
   method: "json_ld" | "microdata" | null;
+  retrievalProvider: "direct" | "firecrawl";
   contentSha256: string | null;
 }
 
@@ -322,6 +337,7 @@ export function importFailureResult(
       publisher: source?.publisher ?? null,
       imageUrl: source?.imageUrl ?? null,
       method: source?.method ?? null,
+      retrievalProvider: source?.retrievalProvider ?? "direct",
       contentSha256: source?.contentSha256 ?? null,
     },
     recipe: null,

@@ -1,6 +1,6 @@
 # Recipe webpage import contract
 
-Status: frozen for Milestone 1 implementation
+Status: Milestone 1 deterministic contract, extended by the approved Milestone 2 webpage-retrieval fallback
 
 Scope: public, unauthenticated recipe webpages only
 
@@ -10,7 +10,7 @@ This document defines the security and extraction boundary between an import job
 
 ## 1. Non-goals
 
-Milestone 1 does not use a browser, execute page JavaScript, sign in, accept cookies, bypass a paywall, call an AI model, infer a recipe from arbitrary prose, download images, or follow links other than bounded HTTP redirects. It does not import YouTube URLs. It never invents a missing quantity, unit, ingredient, step, time, serving count, author, or image.
+The direct importer does not use a browser, execute page JavaScript, sign in, accept cookies, bypass a paywall, call an AI model, infer a recipe from arbitrary prose, download images, or follow links other than bounded HTTP redirects. After public-address approval, a configured Firecrawl adapter may return rendered raw HTML for the same deterministic extraction rules. This slice does not import YouTube URLs. It never invents a missing quantity, unit, ingredient, step, time, serving count, author, or image.
 
 ## 2. Pipeline and trust boundaries
 
@@ -24,6 +24,8 @@ Run these stages in order:
 6. `extract`: parse Recipe JSON-LD first; use scoped Recipe microdata only when JSON-LD has no eligible candidate.
 7. `normalize`: preserve source strings and conservatively parse quantities, units, and steps.
 8. `classify`: return `success`, `partial_success`, or `failure`; every non-failure result is a draft in `needs_review`.
+
+If direct retrieval fails with an eligible fetch/decode error, or deterministic extraction finds no supported recipe, the pipeline may make one bounded Firecrawl scrape request and then repeat the same extraction and classification stages over returned raw HTML. URL-policy failures and unsafe redirects never cross the provider boundary.
 
 Untrusted input includes the submitted URL, DNS answers, redirect targets, headers, body bytes, HTML, metadata URLs, and all extracted text. Never place extracted markup into the UI without normal escaping. Network policy must also be enforced at the deployment/egress layer; application checks are defense in depth, not a substitute.
 
@@ -79,6 +81,16 @@ The fetch adapter must enforce all of these limits:
 - Log only normalized host, stage, status/size/timing, and redacted error codes. Do not log full query strings, response bodies, cookies, or extracted recipe text.
 
 The source-policy layer may reject a site before fetching based on documented product/legal policy. A robots check, if implemented, uses the identical safe-fetch policy. Never treat `robots.txt` as permission to bypass other restrictions.
+
+### 3.4 Firecrawl fallback
+
+- Firecrawl is optional and server-only. Use `POST https://api.firecrawl.dev/v2/scrape` with bearer authentication; never expose the key through a `NEXT_PUBLIC_` variable.
+- Before the provider call, repeat the submitted URL's syntax, DNS, and public-address approval. Never call Firecrawl for an explicitly rejected URL, address, mixed address space, downgrade, or unsafe redirect.
+- Request both `rawHtml` and `markdown` with `zeroDataRetention: true`, `storeInCache: false`, and framework fetch caching disabled. The webpage extractor consumes only `rawHtml`; capped markdown plus title, language, and source URL metadata may be retained in memory for a later source-specific adapter.
+- Limit the provider call to 30 seconds, its JSON response to 8 MiB, raw HTML to 5 MiB, and markdown to 2 MiB. Enforce the response limit while streaming even if `Content-Length` is absent or misleading. Apply limits before hashing or extraction.
+- Re-run URL and public-address approval for a provider-reported final/source URL. Reject an HTTPS-to-HTTP downgrade and never trust unsafe provider metadata.
+- Do not persist raw provider error bodies. Map provider configuration, authentication, throttling, availability, unsupported-source, invalid-response, and size errors to the stable taxonomy below.
+- Firecrawl is a retrieval fallback, not permission to bypass authentication, cookies, paywalls, source restrictions, or site/platform terms.
 
 ## 4. Structured extraction
 
@@ -232,14 +244,14 @@ Use the narrowest JSON-style `fieldPath`: for example `/recipe/ingredients/1/qua
 
 ## 7. Result envelope and classification
 
-The fetch envelope stores `requestedUrl`, normalized `finalUrl`, redirect count, response media type, fetch timestamp, and SHA-256 of decoded body bytes. The deterministic extraction result excludes job IDs and timestamps and has this logical shape:
+The fetch envelope stores provider (`direct` or `firecrawl`), `requestedUrl`, normalized `finalUrl`, redirect count, response media type, fetch timestamp, and SHA-256 of decoded body bytes. The deterministic extraction result excludes job IDs and timestamps and has this logical shape:
 
 ```text
 contractVersion, extractorVersion
 status: success | partial_success | failure
 reviewState: needs_review | not_created
 source: requestedUrl, finalUrl, canonicalUrl, title, author, publisher,
-        imageUrl, method, contentSha256
+        imageUrl, method, retrievalProvider, contentSha256
 recipe: title, yield, servings, prepTime, cookTime, totalTime, ingredients[], steps[]
 confidence: 0..1
 warnings[]
@@ -256,7 +268,7 @@ Within that shape:
 - a unit is `{canonical, sourceText, confidence}`;
 - each step is `{order, section, originalText, displayText, duration, confidence, evidence[]}`, where `duration` uses the recipe-time shape;
 - absent optional scalar values are `null`, absent lists are `[]`, and no property is silently omitted from the persisted normalized result;
-- `source.method` is `json_ld` or `microdata`; `failure` is null on both non-failure statuses;
+- `source.method` is `json_ld` or `microdata`; `source.retrievalProvider` is `direct` or `firecrawl`; `failure` is null on both non-failure statuses;
 - `extractorVersion` is an immutable deployed parser identifier supplied by the implementation, not a floating package version.
 
 Fixture `.expected.json` files use a test projection: `match` means recursive subset matching, `warningCodes` is the ordered warning-code list (including duplicates), and `evidenceLocator` matches the single required evidence entry's locator. Production results use the full structures above.
@@ -296,6 +308,13 @@ If both core lists are missing, fail `UNSUPPORTED_RECIPE_PAGE` even when a title
 | `CONTENT_ENCODING_UNSUPPORTED` | decode | no | `The source used an unsupported content encoding.` |
 | `CHARSET_UNSUPPORTED` | decode | no | `The source used an unsupported text encoding.` |
 | `UNSUPPORTED_RECIPE_PAGE` | extract | no | `This page does not contain supported structured recipe data.` |
+| `FIRECRAWL_NOT_CONFIGURED` | fetch | no | `Automatic fallback is not configured for this source. Enter the recipe manually.` |
+| `FIRECRAWL_AUTH_FAILED` | fetch | no | `Automatic fallback is temporarily unavailable. Enter the recipe manually or try again later.` |
+| `FIRECRAWL_RATE_LIMITED` | fetch | yes | `Automatic fallback is busy. Try again later or enter the recipe manually.` |
+| `FIRECRAWL_UNAVAILABLE` | fetch | yes | `Automatic fallback could not read this source. Try again later or enter the recipe manually.` |
+| `FIRECRAWL_UNSUPPORTED_SOURCE` | fetch | no | `This source does not permit automatic import. Enter the recipe manually.` |
+| `FIRECRAWL_RESPONSE_INVALID` | fetch or extract | no | `Automatic fallback returned no usable recipe page. Enter the recipe manually.` |
+| `FIRECRAWL_CONTENT_TOO_LARGE` | fetch | no | `The fallback recipe page exceeded the import size limit. Enter the recipe manually.` |
 | `IDEMPOTENCY_CONFLICT` | persist | no | `This import request key was already used for a different link.` |
 | `IMPORT_INTERNAL_ERROR` | any | yes | `The recipe could not be imported because of an internal error.` |
 

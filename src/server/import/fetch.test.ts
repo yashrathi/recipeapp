@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   FETCH_LIMITS,
   SafePageFetcher,
+  returnPinnedAddress,
   type HttpTransport,
   type TransportResponse,
 } from "@/server/import/fetch";
@@ -300,6 +301,27 @@ describe("bounded safe fetch", () => {
     );
     await expect(action).rejects.toMatchObject({ failure: { code: "CONTENT_TYPE_UNSUPPORTED" } });
     expect(iterated).toBe(false);
+  });
+});
+
+describe("pinned Node lookup", () => {
+  it("returns an address array when Node 24 requests lookup with all=true", () => {
+    let result: string | { address: string; family: number }[] | undefined;
+    let resultFamily: number | undefined;
+
+    returnPinnedAddress(
+      "93.184.216.34",
+      4,
+      { all: true },
+      (error, address, family) => {
+        expect(error).toBeNull();
+        result = address;
+        resultFamily = family;
+      },
+    );
+
+    expect(result).toEqual([{ address: "93.184.216.34", family: 4 }]);
+    expect(resultFamily).toBeUndefined();
   });
 });
 

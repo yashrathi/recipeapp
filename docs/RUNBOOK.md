@@ -37,6 +37,8 @@ Environment values:
 
 - `SESSION_SECRET`: at least 32 random characters; required at runtime in production.
 - `DATABASE_PATH`: SQLite file path, default `.data/recipe-app.sqlite`.
+- `FIRECRAWL_API_KEY`: optional server-only key used after an eligible public webpage passes URL safety checks but direct fetching or deterministic extraction cannot produce a usable page.
+- `FIRECRAWL_API_URL`: Firecrawl scrape endpoint, default `https://api.firecrawl.dev/v2/scrape`; keep the default outside controlled adapter tests.
 
 Do not commit `.env.local`, database files, or real secrets. The committed `.env.example` contains placeholders only.
 
@@ -73,7 +75,7 @@ Current verified baseline: 12 test files / 135 Vitest tests, a warning-free prod
 - `GET /api/health` returns `200` with the latest applied migration when SQLite is ready.
 - A `503` response with `database: not_initialized` means `npm run db:setup` has not completed or the configured database cannot be opened.
 - If a demo session redirects back to `/`, confirm the seed exists and that the signed session's user, household, membership, and role still match an active membership.
-- If public webpage import fails, read the surfaced warning and use manual entry. The importer rejects private/loopback destinations, redirects outside policy, oversized/slow responses, unsupported media, and pages without trustworthy recipe evidence.
+- If public webpage import fails, read the surfaced warning and use manual entry. The importer rejects private/loopback destinations, redirects outside policy, oversized/slow responses, unsupported media, and pages without trustworthy recipe evidence. When configured, Firecrawl is attempted only after the original URL passes the same public-address policy and direct retrieval or extraction cannot produce a usable recipe. Firecrawl requests disable provider retention and caching; its returned URL and bounded content are revalidated before extraction.
 - If househelp audio is unavailable, use the on-screen audio recovery action and device settings. The local progress queue retries connectivity failures but deliberately retains rejected mutations for safe recovery instead of silently discarding them.
 - If production startup reports `SESSION_SECRET is required in production`, provide a secret through the hosting platform's secret manager; do not add a fallback to source control.
 

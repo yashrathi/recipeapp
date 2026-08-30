@@ -58,6 +58,7 @@ export interface ExtractPageInput {
   finalUrl: string;
   contentSha256: string;
   html: string;
+  retrievalProvider?: "direct" | "firecrawl";
   initialWarnings?: ImportWarning[];
 }
 
@@ -713,7 +714,12 @@ export function extractRecipePage(input: ExtractPageInput): ImportResult {
         retryable: false,
         message: "This page does not contain supported structured recipe data.",
       },
-      { finalUrl: input.finalUrl, canonicalUrl: pageCanonical(document, input.finalUrl, warnings), contentSha256: input.contentSha256 },
+      {
+        finalUrl: input.finalUrl,
+        canonicalUrl: pageCanonical(document, input.finalUrl, warnings),
+        retrievalProvider: input.retrievalProvider ?? "direct",
+        contentSha256: input.contentSha256,
+      },
       warnings,
     );
   }
@@ -757,6 +763,7 @@ export function extractRecipePage(input: ExtractPageInput): ImportResult {
         author,
         publisher,
         method: candidate.method,
+        retrievalProvider: input.retrievalProvider ?? "direct",
         contentSha256: input.contentSha256,
       },
       warnings,
@@ -792,6 +799,7 @@ export function extractRecipePage(input: ExtractPageInput): ImportResult {
       publisher,
       imageUrl: image?.value ?? null,
       method: candidate.method,
+      retrievalProvider: input.retrievalProvider ?? "direct",
       contentSha256: input.contentSha256,
     },
     recipe,

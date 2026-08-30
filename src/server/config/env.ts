@@ -4,6 +4,11 @@ const EnvironmentSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   DATABASE_PATH: z.string().trim().min(1).default(".data/recipe-app.sqlite"),
   SESSION_SECRET: z.string().min(32).optional(),
+  FIRECRAWL_API_KEY: z.preprocess(
+    (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.string().trim().min(1).optional(),
+  ),
+  FIRECRAWL_API_URL: z.url().default("https://api.firecrawl.dev/v2/scrape"),
 });
 
 export type AppEnvironment = z.infer<typeof EnvironmentSchema>;

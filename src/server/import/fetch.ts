@@ -1,4 +1,5 @@
 import { promises as dns } from "node:dns";
+import type { LookupAddress, LookupOptions } from "node:dns";
 import http from "node:http";
 import https from "node:https";
 import { isIP } from "node:net";
@@ -89,8 +90,8 @@ export class PinnedNodeTransport implements HttpTransport {
         agent: false,
         maxHeaderSize: FETCH_LIMITS.headerBytes,
         servername: input.approved.hostname,
-        lookup: (_hostname, _options, callback) => {
-          callback(null, input.address, family);
+        lookup: (_hostname, options, callback) => {
+          returnPinnedAddress(input.address, family, options, callback);
         },
       });
 
@@ -125,6 +126,23 @@ export class PinnedNodeTransport implements HttpTransport {
       request.end();
     });
   }
+}
+
+export function returnPinnedAddress(
+  address: string,
+  family: number,
+  options: LookupOptions,
+  callback: (
+    error: NodeJS.ErrnoException | null,
+    result: string | LookupAddress[],
+    family?: number,
+  ) => void,
+): void {
+  if (options.all) {
+    callback(null, [{ address, family }]);
+    return;
+  }
+  callback(null, address, family);
 }
 
 function parseMediaType(contentType: string | undefined): {
