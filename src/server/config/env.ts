@@ -20,6 +20,17 @@ const EnvironmentSchema = z.object({
     },
     z.boolean().default(false),
   ),
+  PREVIEW_DEMO_AUTH: z.preprocess(
+    (value) => {
+      if (typeof value !== "string") return value;
+      const normalized = value.trim().toLowerCase();
+      if (!normalized) return undefined;
+      if (normalized === "true") return true;
+      if (normalized === "false") return false;
+      return value;
+    },
+    z.boolean().default(false),
+  ),
   OPENAI_API_KEY: z.preprocess(
     (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
     z.string().trim().min(1).optional(),
@@ -54,7 +65,8 @@ export function getSessionSecret(): string {
 }
 
 export function isDemoAuthEnabled(): boolean {
-  return getEnvironment().NODE_ENV !== "production";
+  const environment = getEnvironment();
+  return environment.NODE_ENV !== "production" || environment.PREVIEW_DEMO_AUTH;
 }
 
 export function resetEnvironmentForTests(): void {
